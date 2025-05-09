@@ -4,14 +4,14 @@ import { Button } from "@/components/ui/button";
 
 interface MessageInputProps {
     onSend: (text: string) => void;
-    replyingTo: string | null;
-    cancelReply: () => void;
+    activeThreadId: string | null;
+    clearThread: () => void;
 }
 
 const MessageInput: React.FC<MessageInputProps> = ({
                                                        onSend,
-                                                       replyingTo,
-                                                       cancelReply,
+                                                       activeThreadId,
+                                                       clearThread,
                                                    }) => {
     const [text, setText] = useState("");
 
@@ -31,13 +31,13 @@ const MessageInput: React.FC<MessageInputProps> = ({
 
     return (
         <div className="flex flex-col gap-2 p-4 border-t border-border bg-background">
-            {replyingTo && (
+            {activeThreadId && (
                 <div className="text-sm text-muted-foreground flex justify-between mb-1">
-          <span>
-            Replying to <code>{replyingTo.slice(0, 6)}</code>
-          </span>
-                    <button className="underline" onClick={cancelReply}>
-                        Cancel
+    <span>
+      Following thread <code>{activeThreadId.slice(0, 6)}</code>
+    </span>
+                    <button className="underline" onClick={clearThread}>
+                        Clear thread
                     </button>
                 </div>
             )}

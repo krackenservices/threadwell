@@ -8,7 +8,9 @@ import { v4 as uuidv4 } from "uuid";
 const App = () => {
     const [chats, setChats] = useState<Record<string, ChatMessage[]>>({});
     const [activeChatId, setActiveChatId] = useState<string | null>(null);
-    const [replyingTo, setReplyingTo] = useState<string | null>(null);
+    //const [replyingTo, setReplyingTo] = useState<string | null>(null);
+    const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
+
 
     const handleSend = (text: string) => {
         if (!activeChatId) return;
@@ -16,20 +18,18 @@ const App = () => {
         const userMsg: ChatMessage = {
             id: uuidv4(),
             chatId: activeChatId,
-            parentId: replyingTo ?? undefined,
+            parentId: activeThreadId ?? undefined,
             role: "user",
             content: text,
             timestamp: Date.now(),
         };
 
-        const reply: ChatMessage = {
+        const assistantReply: ChatMessage = {
             id: uuidv4(),
             chatId: activeChatId,
             parentId: userMsg.id,
             role: "assistant",
-            content: replyingTo
-                ? `Replying to **${userMsg.content}**\n\nYou said: _${text}_`
-                : `You said: _${text}_`,
+            content: `You said: _${text}_`,
             timestamp: Date.now() + 1,
         };
 
@@ -38,14 +38,17 @@ const App = () => {
             [activeChatId]: [...(prev[activeChatId] || []), userMsg],
         }));
 
-        setReplyingTo(null);
+        setActiveThreadId(userMsg.id);
 
+        // Simulated assistant response
         setTimeout(() => {
             setChats((prev) => ({
                 ...prev,
-                [activeChatId]: [...(prev[activeChatId] || []), reply],
+                [activeChatId]: [...(prev[activeChatId] || []), assistantReply],
             }));
-        }, 800);
+            // Continue the thread to the assistant reply
+            setActiveThreadId(assistantReply.id);
+        }, 600);
     };
 
 
@@ -57,7 +60,7 @@ const App = () => {
 
     const switchChat = (id: string) => {
         setActiveChatId(id);
-        setReplyingTo(null);
+        setActiveThreadId(null);
     };
 
     return (
@@ -82,13 +85,13 @@ const App = () => {
                         <div className="flex-1 overflow-hidden">
                             <ChatThread
                                 messages={chats[activeChatId] || []}
-                                onReply={setReplyingTo}
+                                onReply={setActiveThreadId}
                             />
                         </div>
                         <MessageInput
                             onSend={handleSend}
-                            replyingTo={replyingTo}
-                            cancelReply={() => setReplyingTo(null)}
+                            activeThreadId={activeThreadId}
+                            clearThread={() => setActiveThreadId(null)}
                         />
                     </>
                 ) : (
