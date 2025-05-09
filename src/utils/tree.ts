@@ -1,29 +1,42 @@
-import type { ChatMessage, ThreadedMessageNode } from "@/types";
+import type { ChatMessage } from "@/types";
 
+export interface ThreadedMessageNode {
+    message: ChatMessage;
+    children: ThreadedMessageNode[];
+}
+
+/**
+ * Transforms a flat array of ChatMessage into a threaded tree structure.
+ */
 export function buildMessageTree(messages: ChatMessage[]): ThreadedMessageNode[] {
-    const messageMap = new Map<string, ThreadedMessageNode>();
+    const nodes = new Map<string, ThreadedMessageNode>();
     const roots: ThreadedMessageNode[] = [];
 
-    // Initialize all nodes
-    messages.forEach((msg) => {
-        messageMap.set(msg.id, { message: msg, children: [] });
-    });
+    // Step 1: Create node for each message
+    for (const msg of messages) {
+        nodes.set(msg.id, { message: msg, children: [] });
+    }
 
-    // Build tree
-    messages.forEach((msg) => {
-        const node = messageMap.get(msg.id)!;
-        if (msg.parentId) {
-            const parent = messageMap.get(msg.parentId);
-            if (parent) {
-                parent.children.push(node);
-            } else {
-                // Orphaned node: no valid parent
-                roots.push(node);
-            }
+    // Step 2: Link children to parents
+    for (const msg of messages) {
+        const node = nodes.get(msg.id)!;
+        const parentId = msg.parentId;
+
+        if (parentId && nodes.has(parentId)) {
+            nodes.get(parentId)!.children.push(node);
         } else {
             roots.push(node);
         }
-    });
+    }
+
+    // Step 3: Sort children by timestamp (optional but recommended)
+    function sortTree(node: ThreadedMessageNode) {
+        node.children.sort((a, b) => a.message.timestamp - b.message.timestamp);
+        node.children.forEach(sortTree);
+    }
+
+    roots.sort((a, b) => a.message.timestamp - b.message.timestamp);
+    roots.forEach(sortTree);
 
     return roots;
 }

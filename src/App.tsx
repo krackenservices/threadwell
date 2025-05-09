@@ -22,17 +22,13 @@ const App = () => {
             timestamp: Date.now(),
         };
 
-        const parentMsg = userMsg.parentId
-            ? chats[activeChatId]?.find((m) => m.id === userMsg.parentId)
-            : undefined;
-
         const reply: ChatMessage = {
             id: uuidv4(),
             chatId: activeChatId,
             parentId: userMsg.id,
             role: "assistant",
-            content: parentMsg
-                ? `Replying to **${parentMsg.content}**\n\nYou said: _${text}_`
+            content: replyingTo
+                ? `Replying to **${userMsg.content}**\n\nYou said: _${text}_`
                 : `You said: _${text}_`,
             timestamp: Date.now() + 1,
         };
@@ -51,6 +47,7 @@ const App = () => {
             }));
         }, 800);
     };
+
 
     const createChat = () => {
         const newId = uuidv4();
