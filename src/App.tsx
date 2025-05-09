@@ -13,10 +13,14 @@ const App = () => {
     const handleSend = (text: string) => {
         if (!currentChatId) return;
 
+        const parentMsg = chats[currentChatId]?.find((m) => m.id === activeThreadId);
+        const userMsgId = uuidv4();
+
         const userMsg: ChatMessage = {
-            id: uuidv4(),
+            id: userMsgId,
             chatId: currentChatId,
-            parentId: activeThreadId ?? undefined,
+            parentId: activeThreadId && activeThreadId !== userMsgId ? activeThreadId : undefined,
+            rootId: parentMsg?.rootId ?? activeThreadId ?? userMsgId, // ⬅️ root logic
             role: "user",
             content: text,
             timestamp: Date.now(),
@@ -25,9 +29,10 @@ const App = () => {
         const assistantReply: ChatMessage = {
             id: uuidv4(),
             chatId: currentChatId,
-            parentId: userMsg.id,
+            parentId: userMsgId,
+            rootId: userMsg.rootId,
             role: "assistant",
-            content: `You said: _${text}_`,
+            content: `**You said:** ${text}`,
             timestamp: Date.now() + 1,
         };
 
@@ -36,7 +41,7 @@ const App = () => {
             [currentChatId]: [...(prev[currentChatId] || []), userMsg],
         }));
 
-        setActiveThreadId(userMsg.id);
+        setActiveThreadId(userMsgId);
 
         setTimeout(() => {
             setChats((prev) => ({

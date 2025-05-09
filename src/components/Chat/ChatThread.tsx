@@ -22,8 +22,8 @@ const ThreadNode: React.FC<{
                 <div className="absolute -top-6 h-6 w-px bg-muted left-1/2 transform -translate-x-1/2 z-0" />
             )}
 
-            <div className="relative z-10 w-full px-4 max-w-[600px]">
-                <ChatMessageBubble
+            <div className="relative z-10 w-full px-4 max-w-[700px] min-w-[400px]">
+            <ChatMessageBubble
                     message={node.message}
                     onReply={() => onReply(node.message.id)}
                     highlight={isActive}
@@ -35,7 +35,7 @@ const ThreadNode: React.FC<{
                     {node.children.map((child) => (
                         <div
                             key={child.message.id}
-                            className="relative flex flex-col items-center min-w-[320px] max-w-[600px] w-full"
+                            className="relative flex flex-col items-center min-w-[400px] max-w-[700px] w-full"
                         >
                             <div className="absolute -top-6 h-6 w-px bg-muted left-1/2 transform -translate-x-1/2" />
                             <ThreadNode
