@@ -20,7 +20,7 @@ const App = () => {
             id: userMsgId,
             chatId: currentChatId,
             parentId: activeThreadId && activeThreadId !== userMsgId ? activeThreadId : undefined,
-            rootId: parentMsg?.rootId ?? activeThreadId ?? userMsgId, // ⬅️ root logic
+            rootId: parentMsg?.rootId ?? activeThreadId ?? userMsgId,
             role: "user",
             content: text,
             timestamp: Date.now(),
@@ -32,7 +32,7 @@ const App = () => {
             parentId: userMsgId,
             rootId: userMsg.rootId,
             role: "assistant",
-            content: `**You said:** ${text}`,
+            content: `**You said:** ${text.replace(/\n/g, " ").trim()}`,
             timestamp: Date.now() + 1,
         };
 
@@ -66,6 +66,7 @@ const App = () => {
 
     return (
         <div className="flex h-screen bg-background text-foreground">
+            {/* Sidebar */}
             <div className="w-64 border-r p-4 flex flex-col gap-2">
                 <Button onClick={createChat}>+ New Chat</Button>
                 <div className="flex flex-col gap-1 mt-4">
@@ -80,15 +81,22 @@ const App = () => {
                     ))}
                 </div>
             </div>
+
+            {/* Main canvas */}
             <div className="flex flex-col flex-1">
                 {currentChatId ? (
                     <>
-                        <div className="flex-1 overflow-hidden">
-                            <ChatThread
-                                messages={chats[currentChatId] || []}
-                                onReply={setActiveThreadId}
-                                activeThreadId={activeThreadId}
-                            />
+                        {/* Fixed-size scrollable canvas */}
+                        <div className="flex-1 overflow-auto bg-neutral-950">
+                            <div className="min-w-full min-h-full flex justify-center items-start">
+                                <div className="p-10 inline-flex">
+                                    <ChatThread
+                                        messages={chats[currentChatId] || []}
+                                        onReply={setActiveThreadId}
+                                        activeThreadId={activeThreadId}
+                                    />
+                                </div>
+                            </div>
                         </div>
                         <MessageInput
                             onSend={handleSend}
