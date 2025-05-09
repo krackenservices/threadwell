@@ -1,12 +1,14 @@
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button"; // ✅ ADD THIS
-import type {ChatMessage} from "@/types";
+import { Button } from "@/components/ui/button";
+import type { ChatMessage } from "@/types";
 import ReactMarkdown from "react-markdown";
 
 interface ChatMessageProps {
     message: ChatMessage;
     onReply?: () => void;
+    highlight?: boolean;
+    showThreadId?: boolean;
 }
 
 const roleColors: Record<ChatMessage["role"], string> = {
@@ -15,12 +17,26 @@ const roleColors: Record<ChatMessage["role"], string> = {
     system: "bg-gray-600 text-white",
 };
 
-const ChatMessageBubble: React.FC<ChatMessageProps> = ({ message, onReply }) => {
+const ChatMessageBubble: React.FC<ChatMessageProps> = ({
+                                                           message,
+                                                           onReply,
+                                                           highlight = false,
+                                                           showThreadId = false,
+                                                       }) => {
     const roleClass = roleColors[message.role] || "bg-gray-700 text-white";
 
     return (
         <div className="w-full my-2">
-            <Card className={`rounded-xl shadow ${roleClass}`}>
+            <Card
+                className={`rounded-xl shadow relative ${roleClass} ${
+                    highlight ? "ring-2 ring-accent" : ""
+                }`}
+            >
+                {showThreadId && (
+                    <div className="absolute top-1 right-2 text-xs text-muted-foreground italic">
+                        Thread: {message.id.slice(0, 6)}
+                    </div>
+                )}
                 <CardContent className="p-4 prose prose-invert max-w-full">
                     <ReactMarkdown>{message.content}</ReactMarkdown>
                     {onReply && message.role !== "user" && (

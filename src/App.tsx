@@ -1,23 +1,21 @@
 import { useState } from "react";
 import ChatThread from "@/components/Chat/ChatThread";
 import MessageInput from "@/components/Chat/MessageInput";
-import { Button } from "@/components/ui/button";
 import type { ChatMessage } from "@/types";
+import { Button } from "@/components/ui/button";
 import { v4 as uuidv4 } from "uuid";
 
 const App = () => {
     const [chats, setChats] = useState<Record<string, ChatMessage[]>>({});
-    const [activeChatId, setActiveChatId] = useState<string | null>(null);
-    //const [replyingTo, setReplyingTo] = useState<string | null>(null);
+    const [currentChatId, setCurrentChatId] = useState<string | null>(null);
     const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
 
-
     const handleSend = (text: string) => {
-        if (!activeChatId) return;
+        if (!currentChatId) return;
 
         const userMsg: ChatMessage = {
             id: uuidv4(),
-            chatId: activeChatId,
+            chatId: currentChatId,
             parentId: activeThreadId ?? undefined,
             role: "user",
             content: text,
@@ -26,7 +24,7 @@ const App = () => {
 
         const assistantReply: ChatMessage = {
             id: uuidv4(),
-            chatId: activeChatId,
+            chatId: currentChatId,
             parentId: userMsg.id,
             role: "assistant",
             content: `You said: _${text}_`,
@@ -35,31 +33,29 @@ const App = () => {
 
         setChats((prev) => ({
             ...prev,
-            [activeChatId]: [...(prev[activeChatId] || []), userMsg],
+            [currentChatId]: [...(prev[currentChatId] || []), userMsg],
         }));
 
         setActiveThreadId(userMsg.id);
 
-        // Simulated assistant response
         setTimeout(() => {
             setChats((prev) => ({
                 ...prev,
-                [activeChatId]: [...(prev[activeChatId] || []), assistantReply],
+                [currentChatId]: [...(prev[currentChatId] || []), assistantReply],
             }));
-            // Continue the thread to the assistant reply
             setActiveThreadId(assistantReply.id);
-        }, 600);
+        }, 500);
     };
 
-
     const createChat = () => {
-        const newId = uuidv4();
-        setChats((prev) => ({ ...prev, [newId]: [] }));
-        setActiveChatId(newId);
+        const id = uuidv4();
+        setChats((prev) => ({ ...prev, [id]: [] }));
+        setCurrentChatId(id);
+        setActiveThreadId(null);
     };
 
     const switchChat = (id: string) => {
-        setActiveChatId(id);
+        setCurrentChatId(id);
         setActiveThreadId(null);
     };
 
@@ -71,7 +67,7 @@ const App = () => {
                     {Object.keys(chats).map((id) => (
                         <Button
                             key={id}
-                            variant={id === activeChatId ? "default" : "secondary"}
+                            variant={id === currentChatId ? "default" : "secondary"}
                             onClick={() => switchChat(id)}
                         >
                             Chat {id.slice(0, 4)}
@@ -80,12 +76,13 @@ const App = () => {
                 </div>
             </div>
             <div className="flex flex-col flex-1">
-                {activeChatId ? (
+                {currentChatId ? (
                     <>
                         <div className="flex-1 overflow-hidden">
                             <ChatThread
-                                messages={chats[activeChatId] || []}
+                                messages={chats[currentChatId] || []}
                                 onReply={setActiveThreadId}
+                                activeThreadId={activeThreadId}
                             />
                         </div>
                         <MessageInput
