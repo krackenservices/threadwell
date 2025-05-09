@@ -23,7 +23,7 @@ const ChatMessageBubble: React.FC<ChatMessageProps> = ({ message, onReply }) => 
             <Card className={`rounded-xl shadow ${roleClass}`}>
                 <CardContent className="p-4 prose prose-invert max-w-full">
                     <ReactMarkdown>{message.content}</ReactMarkdown>
-                    {onReply && (
+                    {onReply && message.role !== "user" && (
                         <Button
                             variant="link"
                             size="sm"
