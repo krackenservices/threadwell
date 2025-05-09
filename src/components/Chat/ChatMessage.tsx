@@ -8,6 +8,8 @@ interface ChatMessageProps {
     message: ChatMessage;
     onReply?: () => void;
     highlight?: boolean;
+    onMoveToChat?: (id: string) => void;
+    isLeaf?: boolean;
 }
 
 const roleColors: Record<ChatMessage["role"], string> = {
@@ -20,6 +22,8 @@ const ChatMessageBubble: React.FC<ChatMessageProps> = ({
                                                            message,
                                                            onReply,
                                                            highlight = false,
+                                                            onMoveToChat,
+                                                            isLeaf = false,
                                                        }) => {
     const roleClass = roleColors[message.role] || "bg-gray-700 text-white";
 
@@ -49,6 +53,16 @@ const ChatMessageBubble: React.FC<ChatMessageProps> = ({
                                 onClick={onReply}
                             >
                                 Reply
+                            </Button>
+                        )}
+                        {onMoveToChat && message.role === "user" && (
+                            <Button
+                                variant="link"
+                                size="sm"
+                                className="text-muted-foreground p-0 h-auto ml-4"
+                                onClick={() => onMoveToChat(message.id)}
+                            >
+                                Move to Chat
                             </Button>
                         )}
                     </CardContent>

@@ -5,6 +5,7 @@ import ChatMessageBubble from "@/components/Chat/ChatMessage";
 interface ChatThreadProps {
     messages: ChatMessage[];
     onReply: (id: string) => void;
+    onMoveToChat: (id: string) => void;
     activeThreadId: string | null;
 }
 
@@ -14,7 +15,8 @@ const ThreadNode: React.FC<{
     onReply: (id: string) => void;
     activeThreadId: string | null;
     activePathIds: Set<string>;
-}> = ({ node, level = 0, onReply, activeThreadId, activePathIds }) => {
+    onMoveToChat: (id: string) => void;
+}> = ({ node, level = 0, onReply, activeThreadId, activePathIds, onMoveToChat }) => {
     return (
         <div className="relative flex flex-col items-center mb-12">
             {level > 0 && (
@@ -25,7 +27,9 @@ const ThreadNode: React.FC<{
                 <ChatMessageBubble
                     message={node.message}
                     onReply={() => onReply(node.message.id)}
+                    onMoveToChat={onMoveToChat}
                     highlight={activePathIds.has(node.message.id)}
+                    isLeaf={node.children.length === 0}
                 />
             </div>
 
@@ -37,6 +41,7 @@ const ThreadNode: React.FC<{
                             node={child}
                             level={level + 1}
                             onReply={onReply}
+                            onMoveToChat={onMoveToChat}
                             activeThreadId={activeThreadId}
                             activePathIds={activePathIds}
                         />
@@ -59,7 +64,7 @@ const findAncestry = (
     return null;
 };
 
-const ChatThread: React.FC<ChatThreadProps> = ({ messages, onReply, activeThreadId }) => {
+const ChatThread: React.FC<ChatThreadProps> = ({ messages, onReply, activeThreadId, onMoveToChat }) => {
     const tree = buildMessageTree(messages);
 
     const activePathIds = tree.flatMap((node) => findAncestry(node, activeThreadId ?? "") ?? []);
@@ -71,6 +76,7 @@ const ChatThread: React.FC<ChatThreadProps> = ({ messages, onReply, activeThread
                     key={node.message.id}
                     node={node}
                     onReply={onReply}
+                    onMoveToChat={onMoveToChat}
                     activeThreadId={activeThreadId}
                     activePathIds={new Set(activePathIds)}
                 />

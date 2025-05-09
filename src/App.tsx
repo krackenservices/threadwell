@@ -4,6 +4,7 @@ import MessageInput from "@/components/Chat/MessageInput";
 import type { ChatMessage } from "@/types";
 import { Button } from "@/components/ui/button";
 import { v4 as uuidv4 } from "uuid";
+import { nanoid } from "nanoid";
 
 const App = () => {
     const [chats, setChats] = useState<Record<string, ChatMessage[]>>({});
@@ -52,6 +53,76 @@ const App = () => {
         }, 500);
     };
 
+    const handleMoveToNewChat = (leafId: string) => {
+        if (!currentChatId || !chats[currentChatId]) {
+            console.warn("No active chat to move from.");
+            return;
+        }
+
+        const currentMessages = chats[currentChatId];
+        const messageMap = new Map(currentMessages.map(m => [m.id, m]));
+
+        // 1. Build ancestry from leaf to root
+        const ancestry: ChatMessage[] = [];
+        let current = messageMap.get(leafId);
+        while (current) {
+            ancestry.unshift(current);
+            current = current.parentId ? messageMap.get(current.parentId) : undefined;
+        }
+
+        // 2. Collect descendants
+        const descendants = new Set<string>();
+        const collectDescendants = (id: string) => {
+            descendants.add(id);
+            currentMessages
+                .filter(m => m.parentId === id)
+                .forEach(child => collectDescendants(child.id));
+        };
+        collectDescendants(leafId);
+
+        // 3. Find first branching ancestor from bottom
+        let stopDeletionIndex = 0;
+        for (let i = ancestry.length - 1; i >= 0; i--) {
+            const children = currentMessages.filter(m => m.parentId === ancestry[i].id);
+            if (children.length > 1) {
+                stopDeletionIndex = i;
+                break;
+            }
+        }
+
+        const toDelete = new Set<string>();
+        for (let i = ancestry.length - 1; i > stopDeletionIndex; i--) {
+            toDelete.add(ancestry[i].id);
+        }
+        descendants.forEach(id => toDelete.add(id));
+
+        const updatedOriginal = currentMessages.filter(m => !toDelete.has(m.id));
+
+        const fullSet = new Set([...ancestry.map(m => m.id), ...descendants]);
+        const fullList = currentMessages.filter(m => fullSet.has(m.id));
+
+        const idMap = new Map<string, string>();
+        fullList.forEach(m => idMap.set(m.id, nanoid(6)));
+
+        const remapped = fullList.map(msg => ({
+            ...msg,
+            id: idMap.get(msg.id)!,
+            parentId: msg.parentId ? idMap.get(msg.parentId) ?? null : null,
+            rootId: idMap.get(ancestry[0].id)!,
+        }));
+
+        const newChatId = nanoid(4);
+
+        setChats(prev => ({
+            ...prev,
+            [currentChatId]: updatedOriginal,
+            [newChatId]: remapped,
+        }));
+
+        setCurrentChatId(newChatId);
+        setActiveThreadId(remapped[remapped.length - 1].id);
+    };
+
     const createChat = () => {
         const id = uuidv4();
         setChats((prev) => ({ ...prev, [id]: [] }));
@@ -93,6 +164,7 @@ const App = () => {
                                     <ChatThread
                                         messages={chats[currentChatId] || []}
                                         onReply={setActiveThreadId}
+                                        onMoveToChat={handleMoveToNewChat}
                                         activeThreadId={activeThreadId}
                                     />
                                 </div>
