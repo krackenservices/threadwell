@@ -13,9 +13,8 @@ const ThreadNode: React.FC<{
     level?: number;
     onReply: (id: string) => void;
     activeThreadId: string | null;
-}> = ({ node, level = 0, onReply, activeThreadId }) => {
-    const isActive = node.message.id === activeThreadId;
-
+    activePathIds: Set<string>;
+}> = ({ node, level = 0, onReply, activeThreadId, activePathIds }) => {
     return (
         <div className="relative flex flex-col items-center mb-12">
             {level > 0 && (
@@ -26,7 +25,7 @@ const ThreadNode: React.FC<{
                 <ChatMessageBubble
                     message={node.message}
                     onReply={() => onReply(node.message.id)}
-                    highlight={isActive}
+                    highlight={activePathIds.has(node.message.id)}
                 />
             </div>
 
@@ -39,6 +38,7 @@ const ThreadNode: React.FC<{
                             level={level + 1}
                             onReply={onReply}
                             activeThreadId={activeThreadId}
+                            activePathIds={activePathIds}
                         />
                     ))}
                 </div>
@@ -47,8 +47,22 @@ const ThreadNode: React.FC<{
     );
 };
 
+const findAncestry = (
+    node: ThreadedMessageNode,
+    targetId: string
+): string[] | null => {
+    if (node.message.id === targetId) return [node.message.id];
+    for (const child of node.children) {
+        const path = findAncestry(child, targetId);
+        if (path) return [node.message.id, ...path];
+    }
+    return null;
+};
+
 const ChatThread: React.FC<ChatThreadProps> = ({ messages, onReply, activeThreadId }) => {
     const tree = buildMessageTree(messages);
+
+    const activePathIds = tree.flatMap((node) => findAncestry(node, activeThreadId ?? "") ?? []);
 
     return (
         <div className="p-10">
@@ -58,6 +72,7 @@ const ChatThread: React.FC<ChatThreadProps> = ({ messages, onReply, activeThread
                     node={node}
                     onReply={onReply}
                     activeThreadId={activeThreadId}
+                    activePathIds={new Set(activePathIds)}
                 />
             ))}
         </div>

@@ -26,7 +26,7 @@ const ChatMessageBubble: React.FC<ChatMessageProps> = ({
     return (
         <div className="w-full my-4">
             <div className="relative w-full">
-                <Card className={`min-w-[400px] w-fit rounded-xl shadow relative ${roleClass} ${highlight ? "ring-2 ring-accent" : ""}`}>
+                <Card className={`min-w-[400px] w-fit rounded-xl shadow relative ${roleClass} ${highlight ? "bg-zinc-900 border-l-4 border-purple-400" : ""}`}>
                     {/* Thread Info pinned top-right and right-aligned */}
                     <div className="flex justify-end px-4 pt-3 text-xs text-muted-foreground italic">
                         <div className="text-right">
