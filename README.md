@@ -92,9 +92,6 @@ Pull requests welcome. To contribute:
 3. ⚙️ **Configuration Interface**  
    Let users configure backend providers and preferences. Store in a dedicated settings database.
 
-4. 🐳 **Dockerise the Application**  
-   Provide a `Dockerfile` and `docker-compose.yml` for local and server deployments.
-
 5. 🎨 **Improve UI/UX**  
    Polish the layout, spacing, message alignment, and visual clarity. Introduce dark mode, avatars, and better thread visualization.
 
