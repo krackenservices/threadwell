@@ -73,37 +73,50 @@ const App: React.FC = () => {
 
     const handleMoveToChat = (fromMessageId: string) => {
         if (!currentChatId) return;
-        const allMessages = chats[currentChatId];
-        const messageMap = new Map(allMessages.map((m) => [m.id, m]));
+        const messages = chats[currentChatId];
+        const messageMap = new Map(messages.map((m) => [m.id, m]));
 
-        // Build ancestry chain up to root
-        const ancestry: ChatMessage[] = [];
-        let current = messageMap.get(fromMessageId);
-        while (current) {
-            ancestry.unshift(current);
-            if (!current.parentId) break;
-            current = messageMap.get(current.parentId);
-        }
+        // 1. Build ancestry (from leaf to root)
+        const buildAncestry = (id: string): ChatMessage[] => {
+            const result: ChatMessage[] = [];
+            let current = messageMap.get(id);
+            while (current) {
+                result.unshift(current);
+                if (!current.parentId) break;
+                current = messageMap.get(current.parentId);
+            }
+            return result;
+        };
 
-        // Build descendant chain (linear, non-branching only)
-        const moveChain: ChatMessage[] = [];
-        current = messageMap.get(fromMessageId);
-        while (current) {
-            moveChain.push(current);
-            const children = allMessages.filter((m) => m.parentId === current!.id);
-            if (children.length !== 1) break; // stop at branch point or end
-            current = children[0];
-        }
+        // 2. Build descendants (BFS)
+        const buildDescendants = (startId: string): ChatMessage[] => {
+            const descendants: ChatMessage[] = [];
+            const queue = [startId];
+            const seen = new Set<string>();
+            while (queue.length) {
+                const currentId = queue.shift()!;
+                for (const m of messages) {
+                    if (m.parentId === currentId && !seen.has(m.id)) {
+                        descendants.push(m);
+                        seen.add(m.id);
+                        queue.push(m.id);
+                    }
+                }
+            }
+            return descendants;
+        };
 
+        const ancestry = buildAncestry(fromMessageId);
+        const descendants = buildDescendants(fromMessageId);
+        const moveChain = [...ancestry, ...descendants];
         const moveIds = new Set(moveChain.map((m) => m.id));
+
+        // 3. Create ID map for copying
         const idMap = new Map<string, string>();
-        for (const msg of [...ancestry, ...moveChain]) {
-            idMap.set(msg.id, nanoid());
-        }
+        moveChain.forEach((m) => idMap.set(m.id, nanoid()));
 
         const newChatId = nanoid();
-
-        const copiedMessages: ChatMessage[] = [...ancestry, ...moveChain].map((m) => ({
+        const copiedMessages = moveChain.map((m) => ({
             ...m,
             id: idMap.get(m.id)!,
             chatId: newChatId,
@@ -111,8 +124,10 @@ const App: React.FC = () => {
             parentId: m.parentId ? idMap.get(m.parentId) : undefined,
         }));
 
-        const retainedMessages = allMessages.filter((m) => !moveIds.has(m.id));
-
+        const ancestryIds = new Set(ancestry.map((m) => m.id));
+        const retainedMessages = messages.filter(
+            (m) => ancestryIds.has(m.id) || !moveIds.has(m.id)
+        );
         setChats((prev) => ({
             ...prev,
             [currentChatId]: retainedMessages,
@@ -122,6 +137,7 @@ const App: React.FC = () => {
         setCurrentChatId(newChatId);
         setActiveThreadId(null);
     };
+
 
     const currentMessages = currentChatId ? chats[currentChatId] || [] : [];
 
