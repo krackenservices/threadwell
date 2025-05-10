@@ -1,186 +1,173 @@
-import { useState } from "react";
+import React, { useState } from "react";
+import { nanoid } from "nanoid";
+import type {ChatMessage} from "./types";
 import ChatThread from "@/components/Chat/ChatThread";
 import MessageInput from "@/components/Chat/MessageInput";
-import type { ChatMessage } from "@/types";
-import { Button } from "@/components/ui/button";
-import { v4 as uuidv4 } from "uuid";
-import { nanoid } from "nanoid";
 
-const App = () => {
+const App: React.FC = () => {
     const [chats, setChats] = useState<Record<string, ChatMessage[]>>({});
     const [currentChatId, setCurrentChatId] = useState<string | null>(null);
     const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
 
-    const handleSend = (text: string) => {
+    const handleSend = (content: string) => {
         if (!currentChatId) return;
 
-        const parentMsg = chats[currentChatId]?.find((m) => m.id === activeThreadId);
-        const userMsgId = uuidv4();
+        const newId = nanoid();
+        const parentId = activeThreadId;
+        const rootId = parentId
+            ? chats[currentChatId].find((m) => m.id === parentId)?.rootId || parentId
+            : newId;
 
-        const userMsg: ChatMessage = {
-            id: userMsgId,
+        const newMessage: ChatMessage = {
+            id: newId,
             chatId: currentChatId,
-            parentId: activeThreadId && activeThreadId !== userMsgId ? activeThreadId : undefined,
-            rootId: parentMsg?.rootId ?? activeThreadId ?? userMsgId,
+            rootId,
+            parentId: parentId || undefined,
             role: "user",
-            content: text,
+            content,
             timestamp: Date.now(),
-        };
-
-        const assistantReply: ChatMessage = {
-            id: uuidv4(),
-            chatId: currentChatId,
-            parentId: userMsgId,
-            rootId: userMsg.rootId,
-            role: "assistant",
-            content: `**You said:** ${text.replace(/\n/g, " ").trim()}`,
-            timestamp: Date.now() + 1,
         };
 
         setChats((prev) => ({
             ...prev,
-            [currentChatId]: [...(prev[currentChatId] || []), userMsg],
+            [currentChatId]: [...(prev[currentChatId] || []), newMessage],
         }));
 
-        setActiveThreadId(userMsgId);
-
         setTimeout(() => {
+            const assistantReply: ChatMessage = {
+                id: nanoid(),
+                chatId: currentChatId,
+                parentId: newMessage.id,
+                rootId: newMessage.rootId,
+                role: "assistant",
+                content: `**You said:** ${content.replace(/\n/g, " ").trim()}`,
+                timestamp: Date.now() + 1,
+            };
+
             setChats((prev) => ({
                 ...prev,
                 [currentChatId]: [...(prev[currentChatId] || []), assistantReply],
             }));
+
             setActiveThreadId(assistantReply.id);
         }, 500);
     };
 
-    const handleMoveToNewChat = (leafId: string) => {
-        if (!currentChatId || !chats[currentChatId]) {
-            console.warn("No active chat to move from.");
-            return;
-        }
+    const handleNewChat = () => {
+        const newChatId = nanoid();
+        setChats((prev) => ({
+            ...prev,
+            [newChatId]: [],
+        }));
+        setCurrentChatId(newChatId);
+        setActiveThreadId(null);
+    };
 
-        const currentMessages = chats[currentChatId];
-        const messageMap = new Map(currentMessages.map(m => [m.id, m]));
+    const handleReply = (id: string) => {
+        setActiveThreadId(id);
+    };
 
-        // 1. Build ancestry from leaf to root
+    const handleClearThread = () => {
+        setActiveThreadId(null);
+    };
+
+    const handleMoveToChat = (fromMessageId: string) => {
+        if (!currentChatId) return;
+        const allMessages = chats[currentChatId];
+        const messageMap = new Map(allMessages.map((m) => [m.id, m]));
+
+        // Build ancestry chain up to root
         const ancestry: ChatMessage[] = [];
-        let current = messageMap.get(leafId);
+        let current = messageMap.get(fromMessageId);
         while (current) {
             ancestry.unshift(current);
-            current = current.parentId ? messageMap.get(current.parentId) : undefined;
+            if (!current.parentId) break;
+            current = messageMap.get(current.parentId);
         }
 
-        // 2. Collect descendants
-        const descendants = new Set<string>();
-        const collectDescendants = (id: string) => {
-            descendants.add(id);
-            currentMessages
-                .filter(m => m.parentId === id)
-                .forEach(child => collectDescendants(child.id));
-        };
-        collectDescendants(leafId);
-
-        // 3. Find first branching ancestor from bottom
-        let stopDeletionIndex = 0;
-        for (let i = ancestry.length - 1; i >= 0; i--) {
-            const children = currentMessages.filter(m => m.parentId === ancestry[i].id);
-            if (children.length > 1) {
-                stopDeletionIndex = i;
-                break;
-            }
+        // Build descendant chain (linear, non-branching only)
+        const moveChain: ChatMessage[] = [];
+        current = messageMap.get(fromMessageId);
+        while (current) {
+            moveChain.push(current);
+            const children = allMessages.filter((m) => m.parentId === current!.id);
+            if (children.length !== 1) break; // stop at branch point or end
+            current = children[0];
         }
 
-        const toDelete = new Set<string>();
-        for (let i = ancestry.length - 1; i > stopDeletionIndex; i--) {
-            toDelete.add(ancestry[i].id);
-        }
-        descendants.forEach(id => toDelete.add(id));
-
-        const updatedOriginal = currentMessages.filter(m => !toDelete.has(m.id));
-
-        const fullSet = new Set([...ancestry.map(m => m.id), ...descendants]);
-        const fullList = currentMessages.filter(m => fullSet.has(m.id));
-
+        const moveIds = new Set(moveChain.map((m) => m.id));
         const idMap = new Map<string, string>();
-        fullList.forEach(m => idMap.set(m.id, nanoid(6)));
+        for (const msg of [...ancestry, ...moveChain]) {
+            idMap.set(msg.id, nanoid());
+        }
 
-        const remapped = fullList.map(msg => ({
-            ...msg,
-            id: idMap.get(msg.id)!,
-            parentId: msg.parentId ? idMap.get(msg.parentId) ?? null : null,
+        const newChatId = nanoid();
+
+        const copiedMessages: ChatMessage[] = [...ancestry, ...moveChain].map((m) => ({
+            ...m,
+            id: idMap.get(m.id)!,
+            chatId: newChatId,
             rootId: idMap.get(ancestry[0].id)!,
+            parentId: m.parentId ? idMap.get(m.parentId) : undefined,
         }));
 
-        const newChatId = nanoid(4);
+        const retainedMessages = allMessages.filter((m) => !moveIds.has(m.id));
 
-        setChats(prev => ({
+        setChats((prev) => ({
             ...prev,
-            [currentChatId]: updatedOriginal,
-            [newChatId]: remapped,
+            [currentChatId]: retainedMessages,
+            [newChatId]: copiedMessages,
         }));
 
         setCurrentChatId(newChatId);
-        setActiveThreadId(remapped[remapped.length - 1].id);
-    };
-
-    const createChat = () => {
-        const id = uuidv4();
-        setChats((prev) => ({ ...prev, [id]: [] }));
-        setCurrentChatId(id);
         setActiveThreadId(null);
     };
 
-    const switchChat = (id: string) => {
-        setCurrentChatId(id);
-        setActiveThreadId(null);
-    };
+    const currentMessages = currentChatId ? chats[currentChatId] || [] : [];
 
     return (
         <div className="flex h-screen bg-background text-foreground">
-            {/* Sidebar */}
             <div className="w-64 border-r p-4 flex flex-col gap-2">
-                <Button onClick={createChat}>+ New Chat</Button>
-                <div className="flex flex-col gap-1 mt-4">
-                    {Object.keys(chats).map((id) => (
-                        <Button
-                            key={id}
-                            variant={id === currentChatId ? "default" : "secondary"}
-                            onClick={() => switchChat(id)}
-                        >
-                            Chat {id.slice(0, 4)}
-                        </Button>
-                    ))}
-                </div>
+                <button onClick={handleNewChat}>+ New Chat</button>
+                {Object.keys(chats).map((id) => (
+                    <button key={id} onClick={() => setCurrentChatId(id)}>
+                        Chat {id.slice(0, 4)}
+                    </button>
+                ))}
             </div>
-
-            {/* Main canvas */}
             <div className="flex flex-col flex-1">
                 {currentChatId ? (
                     <>
-                        {/* Fixed-size scrollable canvas */}
                         <div className="flex-1 overflow-auto bg-neutral-950">
                             <div className="min-w-full min-h-full flex justify-center items-start">
                                 <div className="p-10 inline-flex">
                                     <ChatThread
-                                        messages={chats[currentChatId] || []}
-                                        onReply={setActiveThreadId}
-                                        onMoveToChat={handleMoveToNewChat}
+                                        messages={currentMessages}
+                                        onReply={handleReply}
+                                        onMoveToChat={handleMoveToChat}
                                         activeThreadId={activeThreadId}
                                     />
                                 </div>
                             </div>
                         </div>
+                        <div className="p-2 border-t text-sm text-muted-foreground">
+                            Following thread {activeThreadId || "none"}
+                            <button className="ml-4 underline" onClick={handleClearThread}>
+                                Clear thread
+                            </button>
+                        </div>
                         <MessageInput
                             onSend={handleSend}
                             activeThreadId={activeThreadId}
-                            clearThread={() => setActiveThreadId(null)}
+                            clearThread={handleClearThread}
                         />
                     </>
                 ) : (
                     <div className="flex items-center justify-center h-full text-muted-foreground">
                         Select or create a chat to start messaging.
                     </div>
-                )}
+
+                    )}
             </div>
         </div>
     );
