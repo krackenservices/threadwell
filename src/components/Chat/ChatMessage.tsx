@@ -22,8 +22,7 @@ const ChatMessageBubble: React.FC<ChatMessageProps> = ({
                                                            message,
                                                            onReply,
                                                            highlight = false,
-                                                            onMoveToChat,
-                                                            isLeaf = false,
+                                                            onMoveToChat
                                                        }) => {
     const roleClass = roleColors[message.role] || "bg-gray-700 text-white";
 
