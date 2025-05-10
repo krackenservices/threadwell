@@ -126,7 +126,7 @@ const App: React.FC = () => {
 
         const ancestryIds = new Set(ancestry.map((m) => m.id));
         const retainedMessages = messages.filter(
-            (m) => ancestryIds.has(m.id) || !moveIds.has(m.id)
+            (m) => (ancestryIds.has(m.id) || !moveIds.has(m.id)) && m.id !== fromMessageId
         );
         setChats((prev) => ({
             ...prev,
