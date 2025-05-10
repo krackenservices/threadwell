@@ -1,54 +1,77 @@
-# React + TypeScript + Vite
+![ThreadWell Logo](./doc/img/threadwell_128x128.png) 
+# ThreadWell – Threaded Chat Interface for Contextual LLM Conversations
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**ThreadWell** is a React-based threaded chat interface designed to make conversations with LLMs more structured, contextual, and distraction-free.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 🧠 Problem Statement
 
-## Expanding the ESLint configuration
+Modern chat interactions—especially with LLMs—often diverge from the original topic. Traditional linear interfaces force users to scroll through irrelevant messages, leading to:
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- **Loss of focus**
+- **Polluted context windows**
+- **Reduced LLM accuracy**
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-```
+**ThreadWell** solves this by introducing a tree-based threaded message system, enabling users to branch conversations naturally and isolate lines of thought.
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+---
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## ✨ Features
 
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
-```
+- 🧶 **Threaded Conversations**: Messages reference parents, forming reply trees.
+- 🪄 **Move to Chat**: 
+  - Copy the ancestor chain of any message.
+  - Move that message and all its descendants into a new thread.
+  - Cleanly remove the subtree from the original chat.
+- 🧭 **Simulated Reply Logic**: Maintains realistic conversation structure and formatting.
+- 💬 **Multiple Chats**: Switch easily between threads via the sidebar.
+- 🧩 **Clear Message Indentation**: Visual hierarchy reflects reply structure.
+- 🔍 **Thread Tracker**: Bottom bar shows active thread context.
+
+---
+
+## 🚧 Planned Enhancements
+
+- 📚 **Message Grouping**: Group by author, timestamp gaps, or content similarity.
+- 🔽 **Thread Collapse/Expand**: Make navigation of large trees more manageable.
+- 🧠 **LLM Context Optimization**: Export message chains for efficient prompt seeding.
+
+---
+
+## 🔄 How It Works (Move to Chat)
+
+1. User clicks “Move to Chat” on a message.
+2. The app:
+   - Copies all ancestors up to (but not including) the clicked message.
+   - Moves the clicked message and all children into a new thread.
+   - Prunes the moved subtree from the original thread.
+3. A new thread is created with the copied ancestry + moved messages.
+4. UI updates both threads without layout regressions.
+
+---
+
+## 🧪 Example Use Cases
+
+- **Focused coding discussions**
+- **Design branching**
+- **Customer support with diverging issues**
+- **LLM-driven planning with topic forks**
+
+---
+
+## 📜 License
+
+Customs
+
+---
+
+## 🙌 Contributions
+
+Pull requests welcome. To contribute:
+1. Fork the repo
+2. Create a branch
+3. Commit your changes
+4. Open a PR
+
+---
