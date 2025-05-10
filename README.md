@@ -1,4 +1,4 @@
-![ThreadWell Logo](./doc/img/threadwell_128x128.png) 
+![ThreadWell Logo](./doc/img/threadwell_128x128.png)
 # ThreadWell – Threaded Chat Interface for Contextual LLM Conversations
 
 **ThreadWell** is a React-based threaded chat interface designed to make conversations with LLMs more structured, contextual, and distraction-free.
@@ -62,7 +62,7 @@ Modern chat interactions—especially with LLMs—often diverge from the origina
 
 ## 📜 License
 
-Customs
+Custom
 
 ---
 
@@ -73,5 +73,29 @@ Pull requests welcome. To contribute:
 2. Create a branch
 3. Commit your changes
 4. Open a PR
+
+---
+
+---
+
+## 🛠️ TODO
+
+1. 💾 **Add Persistence**  
+   Start with a local store (LevelDB / NeDB). Design an interface for future migration to SQLite or remote DBs like PostgreSQL.
+
+2. 🧠 **Integrate Real LLM APIs**  
+   Move the current simulated response logic into a `service` abstraction. Enable plug-and-play backends such as:
+   - Ollama
+   - OpenAI
+   - Claude
+
+3. ⚙️ **Configuration Interface**  
+   Let users configure backend providers and preferences. Store in a dedicated settings database.
+
+4. 🐳 **Dockerise the Application**  
+   Provide a `Dockerfile` and `docker-compose.yml` for local and server deployments.
+
+5. 🎨 **Improve UI/UX**  
+   Polish the layout, spacing, message alignment, and visual clarity. Introduce dark mode, avatars, and better thread visualization.
 
 ---
