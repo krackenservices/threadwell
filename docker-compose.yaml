@@ -1,10 +1,16 @@
 services:
   threadwell-backend:
     build:
-      context: ./backend
+      context: .
       dockerfile: Dockerfile
+    container_name: threadwell
     ports:
       - "8080:8080"
+    #volumes:
+    #  - ./data:/app/data
+    environment:
+      - STORAGE_TYPE=memory
+      - STORAGE_PATH=/app/data/threadwell.db
 
   threadwell-webui:
     build:

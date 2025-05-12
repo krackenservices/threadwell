@@ -13,8 +13,8 @@ func Load() Config {
 			Type string `json:"type"`
 			Path string `json:"path"`
 		}{
-			Type: "memory", // or "sqlite"
-			Path: "./data/threadwell.db",
+			Type: os.Getenv("STORAGE_TYPE"),
+			Path: os.Getenv("STORAGE_PATH"),
 		},
 	}
 }
