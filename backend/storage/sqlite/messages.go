@@ -168,7 +168,6 @@ func (s *SQLiteStorage) GetMessage(id string) (*models.Message, error) {
 	return &m, nil
 }
 
-
 func (s *SQLiteStorage) CreateMessage(m models.Message) error {
 	_, err := s.db.Exec(
 		`INSERT INTO messages (id, thread_id, parent_id, root_id, role, content, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?)`,
