@@ -1,8 +1,17 @@
 services:
+  threadwell-backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+
   threadwell-webui:
     build:
-      context: .
+      context: ./frontend
       dockerfile: Dockerfile
     ports:
       - "8080:80"
     restart: unless-stopped
+    depends_on:
+      - threadwell-backend
