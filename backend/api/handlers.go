@@ -201,8 +201,8 @@ func threadDeleteHandler(w http.ResponseWriter, r *http.Request) {
     json.NewEncoder(w).Encode(map[string]string{"deleted": id})
 }
 
-// messageIDHandler handles GET and PUT for /api/messages/{id}
-// @Summary Get or update a message by ID
+// messageIDHandler handles GET, PUT, DELETE for /api/messages/{id}
+// @Summary Get, update or delete a message by ID
 // @Tags messages
 // @Accept json
 // @Produce json
@@ -212,6 +212,7 @@ func threadDeleteHandler(w http.ResponseWriter, r *http.Request) {
 // @Failure 404 {object} map[string]string
 // @Router /api/messages/{id} [get]
 // @Router /api/messages/{id} [put]
+// @Router /api/messages/{id} [delete]
 func messageIDHandler(w http.ResponseWriter, r *http.Request) {
     id := r.URL.Path[len("/api/messages/"):]
     if id == "" {
@@ -230,6 +231,7 @@ func messageIDHandler(w http.ResponseWriter, r *http.Request) {
             http.Error(w, `{"error":"message not found"}`, http.StatusNotFound)
             return
         }
+        w.Header().Set("Content-Type", "application/json")
         json.NewEncoder(w).Encode(msg)
 
     case http.MethodPut:
@@ -247,9 +249,19 @@ func messageIDHandler(w http.ResponseWriter, r *http.Request) {
             http.Error(w, `{"error":"failed to update message"}`, http.StatusInternalServerError)
             return
         }
+        w.Header().Set("Content-Type", "application/json")
         json.NewEncoder(w).Encode(m)
+
+    case http.MethodDelete:
+        if err := backend.DeleteMessage(id); err != nil {
+            http.Error(w, `{"error":"failed to delete"}`, http.StatusInternalServerError)
+            return
+        }
+        w.Header().Set("Content-Type", "application/json")
+        json.NewEncoder(w).Encode(map[string]string{"deleted": id})
 
     default:
         http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
     }
 }
+
