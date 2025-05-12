@@ -4,8 +4,8 @@ import (
     "database/sql"
     _ "github.com/mattn/go-sqlite3"
 
-    "github.com/yourname/threadwell/models"
-    "github.com/yourname/threadwell/storage"
+    "github.com/krackenservices/threadwell/models"
+    "github.com/krackenservices/threadwell/storage"
 )
 
 type SQLiteStorage struct {
