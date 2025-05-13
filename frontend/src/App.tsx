@@ -60,7 +60,7 @@ const App: React.FC = () => {
 
     const handleNewChat = async () => {
         const newThread = await createThread();
-        setThreads((prev) => [...prev, newThread]);
+        setThreads((prev) => [...prev || [], newThread]);
         setCurrentThreadId(newThread.id);
         setActiveThreadId(null);
         setMessages([]);
@@ -88,11 +88,11 @@ const App: React.FC = () => {
         <div className="flex h-screen bg-background text-foreground">
             <div className="w-64 border-r p-4 flex flex-col gap-2">
                 <button onClick={handleNewChat}>+ New Chat</button>
-                {threads.map((t) => (
+                {threads?.length ? threads.map((t) => (
                     <button key={t.id} onClick={() => setCurrentThreadId(t.id)}>
                         {t.title === "New Thread" ? `Chat ${t.id.slice(4, 8)}` : t.title}
                     </button>
-                ))}
+                )): <p className="text-muted">No threads</p>}
             </div>
             <div className="flex flex-col flex-1">
                 {currentThreadId ? (
