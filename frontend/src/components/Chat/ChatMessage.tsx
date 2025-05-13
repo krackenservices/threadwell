@@ -33,12 +33,12 @@ const ChatMessageBubble: React.FC<ChatMessageProps> = ({
                     {/* Thread Info pinned top-right and right-aligned */}
                     <div className="flex justify-end px-4 pt-3 text-xs text-muted-foreground italic">
                         <div className="text-right">
-                            <div>Root: {message.rootId?.slice(0, 6) ?? "—"}</div>
-                            {message.parentId && (
-                                <div>↳ {message.parentId.slice(0, 6)}</div>
+                            <div>Root: {message.root_id?.slice(0, 6) ?? "None"}</div>
+                            {message.parent_id && (
+                                <div>↳ {message.parent_id.slice(0, 6)}</div>
                             )}
                         </div>
-                    </div>
+                    </div>Root:
 
                     {/* Padding on top to avoid overlap */}
                     <CardContent className="pt-14 pb-4 px-6 prose prose-invert max-w-full">

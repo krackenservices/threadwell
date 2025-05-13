@@ -1,0 +1,4 @@
+docs/
+*.db
+*.test
+*.sqlite

@@ -1,8 +1,25 @@
 services:
-  threadwell-webui:
+  threadwell-backend:
     build:
       context: .
       dockerfile: Dockerfile
+    container_name: threadwell
+    ports:
+      - "8001:8001"
+    #volumes:
+    #  - ./data:/app/data
+    environment:
+      - STORAGE_TYPE=memory
+      - STORAGE_PATH=/app/data/threadwell.db
+
+  threadwell-webui:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    env:
+      - VITE_API_BASE_URL=host.docker.internal:8001
     ports:
       - "8080:80"
     restart: unless-stopped
+    depends_on:
+      - threadwell-backend

@@ -80,9 +80,6 @@ Pull requests welcome. To contribute:
 
 ## 🛠️ TODO
 
-1. 💾 **Add Persistence**  
-   Start with a local store (LevelDB / NeDB). Design an interface for future migration to SQLite or remote DBs like PostgreSQL.
-
 2. 🧠 **Integrate Real LLM APIs**  
    Move the current simulated response logic into a `service` abstraction. Enable plug-and-play backends such as:
    - Ollama
@@ -94,5 +91,28 @@ Pull requests welcome. To contribute:
 
 5. 🎨 **Improve UI/UX**  
    Polish the layout, spacing, message alignment, and visual clarity. Introduce dark mode, avatars, and better thread visualization.
+
+
+--- 
+Improvements:
+
+| Option           | Description                                                              |
+|------------------|---------------------------------------------------------------------------|
+| 🔐 Auth          | Add API key, token, or basic auth middleware                              |
+| 🔁 Pagination    | Add limit/offset to /messages                                              |
+| 🔍 Search        | Support full-text search via SQLite FTS5 or in-memory match               |
+| 📤 Export        | Add /export or /threads/{id}/export for JSON download                     |
+| 📂 Files         | Add optional attachments to messages                                       |
+| 🔒 Rate limiting | Useful for production/open deployment                                      |
+
+### 🌐 Frontend (React/Vite)
+
+| Task                          | Description                                                       |
+|-------------------------------|-------------------------------------------------------------------|
+| 🧠 Hook up frontend to API     | Replace in-memory chat logic with fetch/axios                     |
+| 🧾 Fetch threads/messages on load | Populate UI from /api/threads and /api/messages?threadId=...   |
+| 💬 Post messages via API       | Update onSend to use POST /api/messages                           |
+| 🔁 Move to chat                | Wire MoveSubtree call (POST /api/move/{id})                        |
+| ♻️ Refactor state              | Replace local-only state with persisted fetched state             |➜
 
 ---
