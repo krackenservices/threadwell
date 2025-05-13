@@ -18,3 +18,9 @@ export interface ChatMessage {
     content: string;
     timestamp: number;
 }
+
+export interface Settings {
+    llm_provider: string;
+    model_name: string;
+    api_key?: string;
+}

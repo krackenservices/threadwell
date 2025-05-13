@@ -296,10 +296,10 @@ func settingsHandler(w http.ResponseWriter, r *http.Request) {
 			WriteError(w, http.StatusInternalServerError, "Failed to update settings")
 			return
 		}
-		w.WriteHeader(http.StatusOK)
+		WriteJSON(w, http.StatusOK, cfg)
 		return
 
 	default:
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		WriteError(w, http.StatusMethodNotAllowed, "method not allowed")
 	}
 }

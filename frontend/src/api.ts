@@ -1,10 +1,7 @@
-import type { ChatMessage, ChatThread } from "@/types";
+import type { ChatMessage, ChatThread, Settings } from "@/types";
+import { API_BASE} from "@/config.ts";
 
 // THREADS
-
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8001";
-
-
 export const getThreads = () =>
     fetchJson<ChatThread[]>("/api/threads");
 
@@ -72,4 +69,18 @@ async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
         throw new Error(`Invalid JSON response from ${url}`);
     }
 
+}
+
+// SETTINGS
+
+export async function getSettings(): Promise<Settings> {
+    return fetchJson("/api/settings");
+}
+
+export async function updateSettings(settings: Partial<Settings>): Promise<Settings> {
+    return fetchJson("/api/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(settings),
+    });
 }
