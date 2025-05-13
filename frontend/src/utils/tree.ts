@@ -20,7 +20,7 @@ export function buildMessageTree(messages: ChatMessage[]): ThreadedMessageNode[]
     // Step 2: Link children to parents
     for (const msg of messages) {
         const node = nodes.get(msg.id)!;
-        const parentId = msg.parentId;
+        const parentId = msg.parent_id;
 
         if (parentId && nodes.has(parentId)) {
             nodes.get(parentId)!.children.push(node);

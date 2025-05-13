@@ -1,66 +1,69 @@
-import React, { useState } from "react";
-import { nanoid } from "nanoid";
-import type {ChatMessage} from "./types";
-import ChatThread from "@/components/Chat/ChatThread";
+import React, { useEffect, useState } from "react";
+import type { ChatMessage, ChatThread } from "@/types";
+
+import ChatThreadView from "@/components/Chat/ChatThread";
 import MessageInput from "@/components/Chat/MessageInput";
+import {
+    getThreads,
+    getMessages,
+    createMessage,
+    createThread,
+    moveSubtree,
+} from "@/api";
+
+
 
 const App: React.FC = () => {
-    const [chats, setChats] = useState<Record<string, ChatMessage[]>>({});
-    const [currentChatId, setCurrentChatId] = useState<string | null>(null);
+    const [threads, setThreads] = useState<ChatThread[]>([]);
+    const [currentThreadId, setCurrentThreadId] = useState<string | null>(null);
+    const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
 
-    const handleSend = (content: string) => {
-        if (!currentChatId) return;
+    useEffect(() => {
+        getThreads().then(setThreads);
+    }, []);
 
-        const newId = nanoid();
-        const parentId = activeThreadId;
-        const rootId = parentId
-            ? chats[currentChatId].find((m) => m.id === parentId)?.rootId || parentId
-            : newId;
+    useEffect(() => {
+        if (currentThreadId) {
+            getMessages(currentThreadId)
+                .then(setMessages)
+                .catch(() => setMessages([])); // fallback to avoid crash
+        }
+    }, [currentThreadId]);
 
-        const newMessage: ChatMessage = {
-            id: newId,
-            chatId: currentChatId,
-            rootId,
-            parentId: parentId || undefined,
+    const handleSend = async (content: string) => {
+        if (!currentThreadId) return;
+
+        const userMsg = await createMessage({
+            thread_id: currentThreadId,
+            root_id: activeThreadId || undefined,
+            parent_id: activeThreadId || undefined,
             role: "user",
             content,
             timestamp: Date.now(),
-        };
+        });
 
-        setChats((prev) => ({
-            ...prev,
-            [currentChatId]: [...(prev[currentChatId] || []), newMessage],
-        }));
+        setMessages((prev) => [...prev || [], userMsg]);
 
-        setTimeout(() => {
-            const assistantReply: ChatMessage = {
-                id: nanoid(),
-                chatId: currentChatId,
-                parentId: newMessage.id,
-                rootId: newMessage.rootId,
-                role: "assistant",
-                content: `**You said:** ${content.replace(/\n/g, " ").trim()}`,
-                timestamp: Date.now() + 1,
-            };
+        const reply = await createMessage({
+            thread_id: currentThreadId,
+            root_id: userMsg.root_id || userMsg.id,
+            parent_id: userMsg.id,
+            role: "assistant",
+            content: `**You said:** ${content.replace(/\n/g, " ").trim()}`,
+            timestamp: Date.now() + 1,
+        });
 
-            setChats((prev) => ({
-                ...prev,
-                [currentChatId]: [...(prev[currentChatId] || []), assistantReply],
-            }));
-
-            setActiveThreadId(assistantReply.id);
-        }, 500);
+        setMessages((prev) => [...prev, reply]);
+        setActiveThreadId(reply.id);
     };
 
-    const handleNewChat = () => {
-        const newChatId = nanoid();
-        setChats((prev) => ({
-            ...prev,
-            [newChatId]: [],
-        }));
-        setCurrentChatId(newChatId);
+    const handleNewChat = async () => {
+        const newThread = await createThread();
+        setThreads((prev) => [...prev, newThread]);
+        setCurrentThreadId(newThread.id);
         setActiveThreadId(null);
+        setMessages([]);
     };
 
     const handleReply = (id: string) => {
@@ -71,94 +74,34 @@ const App: React.FC = () => {
         setActiveThreadId(null);
     };
 
-    const handleMoveToChat = (fromMessageId: string) => {
-        if (!currentChatId) return;
-        const messages = chats[currentChatId];
-        const messageMap = new Map(messages.map((m) => [m.id, m]));
-
-        // 1. Build ancestry (from leaf to root)
-        const buildAncestry = (id: string): ChatMessage[] => {
-            const result: ChatMessage[] = [];
-            let current = messageMap.get(id);
-            while (current) {
-                result.unshift(current);
-                if (!current.parentId) break;
-                current = messageMap.get(current.parentId);
-            }
-            return result;
-        };
-
-        // 2. Build descendants (BFS)
-        const buildDescendants = (startId: string): ChatMessage[] => {
-            const descendants: ChatMessage[] = [];
-            const queue = [startId];
-            const seen = new Set<string>();
-            while (queue.length) {
-                const currentId = queue.shift()!;
-                for (const m of messages) {
-                    if (m.parentId === currentId && !seen.has(m.id)) {
-                        descendants.push(m);
-                        seen.add(m.id);
-                        queue.push(m.id);
-                    }
-                }
-            }
-            return descendants;
-        };
-
-        const ancestry = buildAncestry(fromMessageId);
-        const descendants = buildDescendants(fromMessageId);
-        const moveChain = [...ancestry, ...descendants];
-        const moveIds = new Set(moveChain.map((m) => m.id));
-
-        // 3. Create ID map for copying
-        const idMap = new Map<string, string>();
-        moveChain.forEach((m) => idMap.set(m.id, nanoid()));
-
-        const newChatId = nanoid();
-        const copiedMessages = moveChain.map((m) => ({
-            ...m,
-            id: idMap.get(m.id)!,
-            chatId: newChatId,
-            rootId: idMap.get(ancestry[0].id)!,
-            parentId: m.parentId ? idMap.get(m.parentId) : undefined,
-        }));
-
-        const ancestryIds = new Set(ancestry.map((m) => m.id));
-        const retainedMessages = messages.filter(
-            (m) => (ancestryIds.has(m.id) || !moveIds.has(m.id)) && m.id !== fromMessageId
-        );
-        setChats((prev) => ({
-            ...prev,
-            [currentChatId]: retainedMessages,
-            [newChatId]: copiedMessages,
-        }));
-
-        setCurrentChatId(newChatId);
+    const handleMoveToChat = async (fromMessageId: string) => {
+        const newThreadId = await moveSubtree(fromMessageId);
+        const newThreads = await getThreads();
+        setThreads(newThreads);
+        setCurrentThreadId(newThreadId);
         setActiveThreadId(null);
+        const movedMessages = await getMessages(newThreadId);
+        setMessages(movedMessages);
     };
-
-
-    const currentMessages = currentChatId ? chats[currentChatId] || [] : [];
 
     return (
         <div className="flex h-screen bg-background text-foreground">
             <div className="w-64 border-r p-4 flex flex-col gap-2">
                 <button onClick={handleNewChat}>+ New Chat</button>
-                {Object.keys(chats).map((id) => (
-                    <button key={id} onClick={() => setCurrentChatId(id)}>
-                        Chat {id.slice(0, 4)}
+                {threads.map((t) => (
+                    <button key={t.id} onClick={() => setCurrentThreadId(t.id)}>
+                        {t.title === "New Thread" ? `Chat ${t.id.slice(4, 8)}` : t.title}
                     </button>
                 ))}
             </div>
             <div className="flex flex-col flex-1">
-                {currentChatId ? (
+                {currentThreadId ? (
                     <>
                         <div className="flex-1 overflow-auto bg-neutral-950">
                             <div className="min-w-full min-h-full flex justify-center items-start">
                                 <div className="p-10 inline-flex">
-                                    <ChatThread
-                                        messages={currentMessages}
+                                    <ChatThreadView
+                                        messages={messages}
                                         onReply={handleReply}
                                         onMoveToChat={handleMoveToChat}
                                         activeThreadId={activeThreadId}
@@ -168,9 +111,6 @@ const App: React.FC = () => {
                         </div>
                         <div className="p-2 border-t text-sm text-muted-foreground">
                             Following thread {activeThreadId || "none"}
-                            <button className="ml-4 underline" onClick={handleClearThread}>
-                                Clear thread
-                            </button>
                         </div>
                         <MessageInput
                             onSend={handleSend}
@@ -182,8 +122,7 @@ const App: React.FC = () => {
                     <div className="flex items-center justify-center h-full text-muted-foreground">
                         Select or create a chat to start messaging.
                     </div>
-
-                    )}
+                )}
             </div>
         </div>
     );

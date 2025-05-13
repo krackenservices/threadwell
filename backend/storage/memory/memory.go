@@ -111,58 +111,91 @@ func (m *MemoryStorage) MoveSubtree(fromMessageID string) (string, error) {
 		return "", errors.New("message not found")
 	}
 
-	newThreadID := uuid.NewString()
-	m.threads[newThreadID] = models.Thread{
-		ID:        newThreadID,
-		Title:     "Branched",
-		CreatedAt: time.Now().Unix(),
+	// 🧠 Step 1: Walk UP the ancestry chain
+	ancestry := []models.Message{}
+	cur := &orig
+	for cur != nil && cur.ParentID != nil {
+		parent, ok := m.messages[*cur.ParentID]
+		if !ok {
+			break
+		}
+		ancestry = append([]models.Message{parent}, ancestry...) // prepend
+		cur = &parent
 	}
 
-	// BFS
-	toMove := map[string]models.Message{orig.ID: orig}
+	// 🧠 Step 2: BFS to collect descendants
+	descendants := map[string]models.Message{orig.ID: orig}
 	queue := []string{orig.ID}
 	for len(queue) > 0 {
 		pid := queue[0]
 		queue = queue[1:]
 		for _, msg := range m.messages {
 			if msg.ParentID != nil && *msg.ParentID == pid {
-				toMove[msg.ID] = msg
+				descendants[msg.ID] = msg
 				queue = append(queue, msg.ID)
 			}
 		}
 	}
 
+	// 🧠 Step 3: Combine all messages to move
+	toMove := map[string]models.Message{}
+	for _, a := range ancestry {
+		toMove[a.ID] = a
+	}
+	for id, d := range descendants {
+		toMove[id] = d
+	}
+
+	// 🧠 Step 4: Generate ID remap
 	idMap := map[string]string{}
 	for oldID := range toMove {
 		idMap[oldID] = uuid.NewString()
 	}
-	rootID := idMap[orig.ID]
+	rootOld := ancestry[0].ID
+	rootNew := idMap[rootOld]
 
-	newMsgs := map[string]models.Message{}
+	// 🧠 Step 5: Create new thread
+	newThreadID := uuid.NewString()
+	title := "Branched"
+	if orig.Content != "" {
+		preview := orig.Content
+		if len(preview) > 20 {
+			preview = preview[:20]
+		}
+		title = "Branched: " + preview
+	}
+	m.threads[newThreadID] = models.Thread{
+		ID:        newThreadID,
+		Title:     title,
+		CreatedAt: time.Now().Unix(),
+	}
+
+	// 🧠 Step 6: Copy messages
+	// 🧠 Step 6: Copy messages
 	for _, old := range toMove {
 		newID := idMap[old.ID]
 		var newParent *string
 		if old.ParentID != nil {
-			p := idMap[*old.ParentID]
-			newParent = &p
+			if remap, ok := idMap[*old.ParentID]; ok {
+				newParent = &remap
+			}
 		}
 
-		newMsgs[newID] = models.Message{
+		// Insert new message into new thread
+		m.messages[newID] = models.Message{
 			ID:        newID,
 			ThreadID:  newThreadID,
 			ParentID:  newParent,
-			RootID:    &rootID,
+			RootID:    &rootNew,
 			Role:      old.Role,
 			Content:   old.Content,
 			Timestamp: old.Timestamp,
 		}
 
-		delete(m.messages, old.ID)
+		// ❌ Delete only if this message is part of the branch (from `fromID` down)
+		if _, ok := descendants[old.ID]; ok {
+			delete(m.messages, old.ID)
+		}
 	}
-
-	for id, msg := range newMsgs {
-		m.messages[id] = msg
-	}
-
 	return newThreadID, nil
 }

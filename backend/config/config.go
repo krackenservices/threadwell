@@ -1,5 +1,7 @@
 package config
 
+import "os"
+
 type Config struct {
 	Storage struct {
 		Type string `json:"type"` // "sqlite" or "memory"

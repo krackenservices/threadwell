@@ -64,8 +64,9 @@ const findAncestry = (
     return null;
 };
 
-const ChatThread: React.FC<ChatThreadProps> = ({ messages, onReply, activeThreadId, onMoveToChat }) => {
-    const tree = buildMessageTree(messages);
+const ChatThreadView: React.FC<ChatThreadProps> = ({ messages, onReply, activeThreadId, onMoveToChat }) => {
+    const tree = buildMessageTree(messages || []);
+
 
     const activePathIds = tree.flatMap((node) => findAncestry(node, activeThreadId ?? "") ?? []);
 
@@ -85,4 +86,4 @@ const ChatThread: React.FC<ChatThreadProps> = ({ messages, onReply, activeThread
     );
 };
 
-export default ChatThread;
+export default ChatThreadView;

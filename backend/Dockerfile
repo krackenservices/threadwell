@@ -21,6 +21,6 @@ COPY --from=builder /app/docs ./docs
 
 RUN mkdir -p /app/data
 
-EXPOSE 8080
+EXPOSE 8001
 
 ENTRYPOINT ["./threadwell"]

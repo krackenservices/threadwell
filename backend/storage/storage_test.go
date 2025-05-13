@@ -153,24 +153,148 @@ func runMoveSubtreeTest(t *testing.T, s storage.Storage) {
 
 	msgs, err := s.ListMessages(newThreadID)
 	require.NoError(t, err)
-	require.Len(t, msgs, 2)
+	require.Len(t, msgs, 3) // ✅ Expect 3 messages: root (copied), child 1, child 2
 
-	var movedChild1, movedChild2 *models.Message
+	found := map[string]*models.Message{}
 	for _, m := range msgs {
-		switch m.Content {
-		case "child 1":
-			movedChild1 = &m
-		case "child 2":
-			movedChild2 = &m
+		found[m.Content] = &m
+	}
+
+	require.Contains(t, found, "root")
+	require.Contains(t, found, "child 1")
+	require.Contains(t, found, "child 2")
+
+	require.NotNil(t, found["child 1"].ParentID)
+	require.Equal(t, *found["child 1"].ParentID, found["root"].ID)
+	require.Equal(t, *found["child 2"].ParentID, found["child 1"].ID)
+
+	require.NotNil(t, found["child 1"].RootID)
+	require.NotNil(t, found["child 2"].RootID)
+	require.Equal(t, *found["child 1"].RootID, *found["child 2"].RootID)
+	require.Equal(t, *found["child 1"].RootID, found["root"].ID)
+}
+
+
+func TestStorage_MoveSubtree_CopiesAncestorsAndMovesBranch(t *testing.T) {
+	store := setupTestDB(t)
+	defer cleanupTest(t)
+
+	// Create thread and messages: M1 → M2 → M3
+	thread := models.Thread{ID: uuid.NewString(), Title: "T", CreatedAt: time.Now().Unix()}
+	require.NoError(t, store.CreateThread(thread))
+
+	m1 := models.Message{
+		ID:        "m1",
+		ThreadID:  thread.ID,
+		Role:      "user",
+		Content:   "M1",
+		Timestamp: time.Now().Unix(),
+	}
+	require.NoError(t, store.CreateMessage(m1))
+
+	m2 := models.Message{
+		ID:        "m2",
+		ThreadID:  thread.ID,
+		ParentID:  &m1.ID,
+		RootID:    &m1.ID,
+		Role:      "user",
+		Content:   "M2",
+		Timestamp: time.Now().Unix(),
+	}
+	require.NoError(t, store.CreateMessage(m2))
+
+	m3 := models.Message{
+		ID:        "m3",
+		ThreadID:  thread.ID,
+		ParentID:  &m2.ID,
+		RootID:    &m1.ID,
+		Role:      "user",
+		Content:   "M3",
+		Timestamp: time.Now().Unix(),
+	}
+	require.NoError(t, store.CreateMessage(m3))
+
+	// Perform branch from M3
+	newThreadID, err := store.MoveSubtree("m3")
+	require.NoError(t, err)
+	require.NotEqual(t, thread.ID, newThreadID)
+
+	// Check original thread only has M1 and M2
+	msgsOrig, err := store.ListMessages(thread.ID)
+	require.NoError(t, err)
+	require.Len(t, msgsOrig, 2)
+	msgIDsOrig := map[string]bool{}
+	for _, m := range msgsOrig {
+		msgIDsOrig[m.ID] = true
+	}
+	require.Contains(t, msgIDsOrig, "m1")
+	require.Contains(t, msgIDsOrig, "m2")
+	require.NotContains(t, msgIDsOrig, "m3")
+
+	// Check new thread has M1, M2 (copied) and M3 (moved)
+	msgsNew, err := store.ListMessages(newThreadID)
+	require.NoError(t, err)
+	require.Len(t, msgsNew, 3)
+
+	// Track ID mapping and structure
+	var copiedM3 *models.Message
+	for _, m := range msgsNew {
+		if m.Content == "M3" {
+			copiedM3 = &m
 		}
 	}
 
-	require.NotNil(t, movedChild1)
-	require.NotNil(t, movedChild2)
-	require.Equal(t, movedChild1.ID, *movedChild2.ParentID)
+	require.NotNil(t, copiedM3, "M3 was not copied into new thread")
+	require.NotEqual(t, copiedM3.ID, "m3")
+	require.NotEqual(t, copiedM3.ThreadID, thread.ID)
+	require.NotNil(t, copiedM3.ParentID)
+	require.NotNil(t, copiedM3.RootID)
+}
 
-	require.NotNil(t, movedChild1.RootID)
-	require.NotNil(t, movedChild2.RootID)
-	require.Equal(t, *movedChild1.RootID, *movedChild2.RootID)
-	require.Equal(t, *movedChild1.RootID, movedChild1.ID)
+func TestStorage_MoveSubtree_FromMiddleOfDeepTree(t *testing.T) {
+	store := setupTestDB(t)
+	defer cleanupTest(t)
+
+	thread := models.Thread{ID: uuid.NewString(), Title: "DeepTree", CreatedAt: time.Now().Unix()}
+	require.NoError(t, store.CreateThread(thread))
+
+	// Chain: M1 → M2 → M3 → M4
+	m1 := models.Message{ID: "m1", ThreadID: thread.ID, Role: "user", Content: "M1", Timestamp: time.Now().Unix()}
+	m2 := models.Message{ID: "m2", ThreadID: thread.ID, ParentID: &m1.ID, RootID: &m1.ID, Role: "user", Content: "M2", Timestamp: time.Now().Unix()}
+	m3 := models.Message{ID: "m3", ThreadID: thread.ID, ParentID: &m2.ID, RootID: &m1.ID, Role: "assistant", Content: "M3", Timestamp: time.Now().Unix()}
+	m4 := models.Message{ID: "m4", ThreadID: thread.ID, ParentID: &m3.ID, RootID: &m1.ID, Role: "user", Content: "M4", Timestamp: time.Now().Unix()}
+
+	require.NoError(t, store.CreateMessage(m1))
+	require.NoError(t, store.CreateMessage(m2))
+	require.NoError(t, store.CreateMessage(m3))
+	require.NoError(t, store.CreateMessage(m4))
+
+	// Branch from M2
+	newThreadID, err := store.MoveSubtree("m2")
+	require.NoError(t, err)
+
+	// Check original thread only contains M1
+	origMsgs, err := store.ListMessages(thread.ID)
+	require.NoError(t, err)
+	require.Len(t, origMsgs, 1)
+	require.Equal(t, "M1", origMsgs[0].Content)
+
+	// Check new thread contains M2–M4 + copied M1
+	newMsgs, err := store.ListMessages(newThreadID)
+	require.NoError(t, err)
+	require.Len(t, newMsgs, 4)
+
+	var foundM1, foundM4 *models.Message
+	for _, m := range newMsgs {
+		if m.Content == "M1" {
+			foundM1 = &m
+		}
+		if m.Content == "M4" {
+			foundM4 = &m
+		}
+	}
+
+	require.NotNil(t, foundM1)
+	require.NotNil(t, foundM4)
+	require.Equal(t, "user", foundM4.Role)
 }
