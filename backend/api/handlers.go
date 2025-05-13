@@ -281,7 +281,7 @@ func settingsHandler(w http.ResponseWriter, r *http.Request) {
 			WriteError(w, http.StatusInternalServerError, "Failed to load settings")
 			return
 		}
-		cfg.LLMApiKey = "" // scrub sensitive field
+		//cfg.LLMApiKey = "" // TODO: scrub sensitive field - this is annoying as if we dont leave it then user would have to re-enter
 		WriteJSON(w, http.StatusOK, cfg)
 		return
 
@@ -296,6 +296,7 @@ func settingsHandler(w http.ResponseWriter, r *http.Request) {
 			WriteError(w, http.StatusInternalServerError, "Failed to update settings")
 			return
 		}
+		cfg.LLMApiKey = ""
 		WriteJSON(w, http.StatusOK, cfg)
 		return
 

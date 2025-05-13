@@ -21,6 +21,7 @@ export interface ChatMessage {
 
 export interface Settings {
     llm_provider: string;
-    model_name: string;
-    api_key?: string;
+    llm_model: string;
+    llm_api_key?: string;
+    llm_endpoint: string;
 }

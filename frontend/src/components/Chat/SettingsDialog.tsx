@@ -47,8 +47,17 @@ export const SettingsDialog: React.FC<{ onClose: () => void }> = ({ onClose }) =
                 Model Name
                 <input
                     type="text"
-                    value={settings.model_name}
-                    onChange={(e) => handleChange("model_name", e.target.value)}
+                    value={settings.llm_model}
+                    onChange={(e) => handleChange("llm_model", e.target.value)}
+                    className="w-full border p-1 mt-1"
+                />
+            </label>
+            <label className="block mb-2">
+                Endpoint
+                <input
+                    type="text"
+                    value={settings.llm_endpoint}
+                    onChange={(e) => handleChange("llm_endpoint", e.target.value)}
                     className="w-full border p-1 mt-1"
                 />
             </label>
@@ -56,8 +65,8 @@ export const SettingsDialog: React.FC<{ onClose: () => void }> = ({ onClose }) =
                 API Key
                 <input
                     type="password"
-                    value={settings.api_key || ""}
-                    onChange={(e) => handleChange("api_key", e.target.value)}
+                    value={settings.llm_api_key || ""}
+                    onChange={(e) => handleChange("llm_api_key", e.target.value)}
                     className="w-full border p-1 mt-1"
                 />
             </label>

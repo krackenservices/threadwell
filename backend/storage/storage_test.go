@@ -174,7 +174,6 @@ func runMoveSubtreeTest(t *testing.T, s storage.Storage) {
 	require.Equal(t, *found["child 1"].RootID, found["root"].ID)
 }
 
-
 func TestStorage_MoveSubtree_CopiesAncestorsAndMovesBranch(t *testing.T) {
 	store := setupTestDB(t)
 	defer cleanupTest(t)

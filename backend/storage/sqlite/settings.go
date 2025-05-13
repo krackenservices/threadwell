@@ -12,6 +12,7 @@ func (s *SQLiteStorage) ensureSettingsTable() error {
 			llm_provider TEXT,
 			llm_endpoint TEXT,
 			llm_api_key TEXT,
+			llm_model TEXT,
 			simulate_only BOOLEAN
 		)
 	`)
@@ -24,16 +25,17 @@ func (s *SQLiteStorage) GetSettings() (*models.Settings, error) {
 		return nil, err
 	}
 
-	row := s.db.QueryRow(`SELECT id, llm_provider, llm_endpoint, llm_api_key, simulate_only FROM settings WHERE id = "default"`)
+	row := s.db.QueryRow(`SELECT id, llm_provider, llm_endpoint, llm_api_key, llm_model, simulate_only FROM settings WHERE id = "default"`)
 
 	var cfg models.Settings
-	err = row.Scan(&cfg.ID, &cfg.LLMProvider, &cfg.LLMEndpoint, &cfg.LLMApiKey, &cfg.SimulateOnly)
+	err = row.Scan(&cfg.ID, &cfg.LLMProvider, &cfg.LLMEndpoint, &cfg.LLMApiKey, &cfg.LLMName, &cfg.SimulateOnly)
 	if err == sql.ErrNoRows {
 		// Insert default
 		cfg = models.Settings{
 			ID:           "default",
 			LLMProvider:  "ollama",
 			LLMEndpoint:  "http://localhost:11434",
+			LLMName:      "llama3",
 			SimulateOnly: true,
 		}
 		_ = s.UpdateSettings(cfg)
@@ -52,14 +54,15 @@ func (s *SQLiteStorage) UpdateSettings(cfg models.Settings) error {
 	}
 
 	_, err = s.db.Exec(`
-		INSERT INTO settings (id, llm_provider, llm_endpoint, llm_api_key, simulate_only)
-		VALUES (?, ?, ?, ?, ?)
+		INSERT INTO settings (id, llm_provider, llm_endpoint, llm_api_key, llm_model, simulate_only)
+		VALUES (?, ?, ?, ?, ?, ?)
 		ON CONFLICT(id) DO UPDATE SET
 			llm_provider=excluded.llm_provider,
 			llm_endpoint=excluded.llm_endpoint,
 			llm_api_key=excluded.llm_api_key,
+		    llm_model=excluded.llm_model,
 			simulate_only=excluded.simulate_only
-	`, cfg.ID, cfg.LLMProvider, cfg.LLMEndpoint, cfg.LLMApiKey, cfg.SimulateOnly)
+	`, cfg.ID, cfg.LLMProvider, cfg.LLMEndpoint, cfg.LLMApiKey, cfg.LLMName, cfg.SimulateOnly)
 
 	return err
 }

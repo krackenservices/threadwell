@@ -207,6 +207,7 @@ func (s *MemoryStorage) GetSettings() (*models.Settings, error) {
 			ID:           "default",
 			LLMProvider:  "ollama",
 			LLMEndpoint:  "http://localhost:11434",
+			LLMName:      "llama3",
 			SimulateOnly: true,
 		}
 	}
