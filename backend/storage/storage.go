@@ -19,4 +19,8 @@ type Storage interface {
 
 	// Tree operations (optional later)
 	MoveSubtree(fromMessageID string) (string, error)
+
+	// Settings
+	GetSettings() (*models.Settings, error)
+	UpdateSettings(models.Settings) error
 }

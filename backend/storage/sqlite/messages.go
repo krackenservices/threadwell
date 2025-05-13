@@ -75,7 +75,10 @@ func (s *SQLiteStorage) MoveSubtree(fromID string) (string, error) {
 	for oldID := range messagesToMove {
 		idMap[oldID] = uuid.NewString()
 	}
-	rootNewID := idMap[ancestry[0].ID] // first ancestor becomes new root
+	rootNewID := idMap[fromID]
+	if len(ancestry) > 0 {
+		rootNewID = idMap[ancestry[0].ID]
+	}
 
 	// Step 6: Create new thread
 	title := "Branched"
@@ -131,7 +134,7 @@ func (s *SQLiteStorage) MoveSubtree(fromID string) (string, error) {
 		)
 		if err != nil {
 			tx.Rollback()
-			return "", err
+			return "", fmt.Errorf("insert failed for %s → %s: %w", m.ID, newID, err)
 		}
 	}
 

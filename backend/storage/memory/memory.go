@@ -14,6 +14,7 @@ type MemoryStorage struct {
 	mu       sync.RWMutex
 	threads  map[string]models.Thread
 	messages map[string]models.Message
+	settings *models.Settings
 }
 
 func New() storage.Storage {
@@ -198,4 +199,21 @@ func (m *MemoryStorage) MoveSubtree(fromMessageID string) (string, error) {
 		}
 	}
 	return newThreadID, nil
+}
+
+func (s *MemoryStorage) GetSettings() (*models.Settings, error) {
+	if s.settings == nil {
+		s.settings = &models.Settings{
+			ID:           "default",
+			LLMProvider:  "ollama",
+			LLMEndpoint:  "http://localhost:11434",
+			SimulateOnly: true,
+		}
+	}
+	return s.settings, nil
+}
+
+func (s *MemoryStorage) UpdateSettings(cfg models.Settings) error {
+	s.settings = &cfg
+	return nil
 }

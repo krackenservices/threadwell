@@ -5,9 +5,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/stretchr/testify/require"
 	"github.com/krackenservices/threadwell/models"
 	"github.com/krackenservices/threadwell/storage"
+	"github.com/stretchr/testify/require"
 )
 
 func RunMoveSubtreeSuite(t *testing.T, name string, store storage.Storage) {
@@ -19,14 +19,14 @@ func RunMoveSubtreeSuite(t *testing.T, name string, store storage.Storage) {
 		require.NoError(t, store.CreateThread(thread))
 
 		m1 := models.Message{
-			ID:        "m1",
+			ID:        uuid.NewString(),
 			ThreadID:  thread.ID,
 			Role:      "user",
 			Content:   "M1",
 			Timestamp: time.Now().Unix(),
 		}
 		m2 := models.Message{
-			ID:        "m2",
+			ID:        uuid.NewString(),
 			ThreadID:  thread.ID,
 			ParentID:  &m1.ID,
 			RootID:    &m1.ID,
@@ -35,7 +35,7 @@ func RunMoveSubtreeSuite(t *testing.T, name string, store storage.Storage) {
 			Timestamp: time.Now().Unix(),
 		}
 		m3 := models.Message{
-			ID:        "m3",
+			ID:        uuid.NewString(),
 			ThreadID:  thread.ID,
 			ParentID:  &m2.ID,
 			RootID:    &m1.ID,
@@ -49,7 +49,7 @@ func RunMoveSubtreeSuite(t *testing.T, name string, store storage.Storage) {
 		require.NoError(t, store.CreateMessage(m3))
 
 		// Branch from M3
-		newThreadID, err := store.MoveSubtree("m3")
+		newThreadID, err := store.MoveSubtree(m3.ID)
 		require.NoError(t, err)
 
 		// Original thread should contain M1 + M2
@@ -78,10 +78,10 @@ func RunMoveSubtreeSuite(t *testing.T, name string, store storage.Storage) {
 		thread := models.Thread{ID: uuid.NewString(), Title: "Deep", CreatedAt: time.Now().Unix()}
 		require.NoError(t, store.CreateThread(thread))
 
-		m1 := models.Message{ID: "m1", ThreadID: thread.ID, Role: "user", Content: "M1", Timestamp: time.Now().Unix()}
-		m2 := models.Message{ID: "m2", ThreadID: thread.ID, ParentID: &m1.ID, RootID: &m1.ID, Role: "user", Content: "M2", Timestamp: time.Now().Unix()}
-		m3 := models.Message{ID: "m3", ThreadID: thread.ID, ParentID: &m2.ID, RootID: &m1.ID, Role: "assistant", Content: "M3", Timestamp: time.Now().Unix()}
-		m4 := models.Message{ID: "m4", ThreadID: thread.ID, ParentID: &m3.ID, RootID: &m1.ID, Role: "user", Content: "M4", Timestamp: time.Now().Unix()}
+		m1 := models.Message{ID: uuid.NewString(), ThreadID: thread.ID, Role: "user", Content: "M1", Timestamp: time.Now().Unix()}
+		m2 := models.Message{ID: uuid.NewString(), ThreadID: thread.ID, ParentID: &m1.ID, RootID: &m1.ID, Role: "user", Content: "M2", Timestamp: time.Now().Unix()}
+		m3 := models.Message{ID: uuid.NewString(), ThreadID: thread.ID, ParentID: &m2.ID, RootID: &m1.ID, Role: "assistant", Content: "M3", Timestamp: time.Now().Unix()}
+		m4 := models.Message{ID: uuid.NewString(), ThreadID: thread.ID, ParentID: &m3.ID, RootID: &m1.ID, Role: "user", Content: "M4", Timestamp: time.Now().Unix()}
 
 		require.NoError(t, store.CreateMessage(m1))
 		require.NoError(t, store.CreateMessage(m2))
@@ -89,7 +89,7 @@ func RunMoveSubtreeSuite(t *testing.T, name string, store storage.Storage) {
 		require.NoError(t, store.CreateMessage(m4))
 
 		// Branch from M2
-		newThreadID, err := store.MoveSubtree("m2")
+		newThreadID, err := store.MoveSubtree(m2.ID)
 		require.NoError(t, err)
 
 		msgsOrig, err := store.ListMessages(thread.ID)
