@@ -9,3 +9,5 @@
 *.sln
 *.sw?
 *.iml
+
+node_modules/
