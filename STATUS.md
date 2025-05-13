@@ -1,94 +1,66 @@
-# 🧠 ThreadWell Project Status
+# ✅ Project Status: ThreadWell
 
-Last updated: 2025-05-13
+## 🧠 Core Functionality
 
----
-
-## ✅ Core Architecture
-
-- **Monorepo** with `/frontend` (React) and `/backend` (Go)
-- Backend uses `net/http`, `swaggo` for OpenAPI, supports multiple pluggable storage backends
-- Frontend uses React + Vite with threaded chat interface
-
----
-
-## ✅ Backend Feature Status
-
-| Option            | Description                                                                 | Status        |
-|------------------|------------------------------------------------------------------------------|---------------|
-| 🔐 Auth           | Add API key, token, or basic auth middleware                                | 🔜 Planned     |
-| 🔁 Pagination     | Add limit/offset to `/messages`                                             | 🔜 Planned     |
-| 🔍 Search         | Support full-text search (SQLite FTS5 / in-memory match)                    | 🔜 Planned     |
-| 📤 Export         | Add `/export` or `/threads/{id}/export` for JSON download                  | 🔜 Planned     |
-| 📂 Files          | Add optional attachments to messages                                        | 🔜 Planned     |
-| 🔒 Rate limiting  | Useful for production/open deployment                                       | 🔜 Planned     |
-
-### Implemented:
-- ✅ Storage interface abstraction
-- ✅ SQLite and in-memory implementations
-- ✅ `MoveSubtree()` logic (copies ancestor chain, moves branch + descendants)
-- ✅ Swagger docs via `swaggo`
-- ✅ Configuration via `STORAGE_TYPE` and `STORAGE_PATH` env vars
+| Feature              | Description                                             | Status       |
+|----------------------|---------------------------------------------------------|--------------|
+| Chat threading       | Tree structure with parent/child reply logic            | ✅ Complete   |
+| Move to new chat     | Forks a thread into a new conversation                  | ✅ Complete   |
+| Ancestor preservation| Ancestors copied, descendants moved correctly           | ✅ Complete   |
+| SQLite backend       | Interface-based, production-ready                       | ✅ Complete   |
+| Memory backend       | Fully compliant, in-memory swap                         | ✅ Complete   |
+| Settings storage     | Centralized LLM and config settings                     | ✅ Complete   |
+| OpenAPI docs         | Swagger (`swaggo`) generated                            | ✅ Complete   |
 
 ---
 
-## 🌐 Frontend Feature Status (React/Vite)
+## 🧪 Tests
 
-| Task                          | Description                                                       | Status        |
-|-------------------------------|-------------------------------------------------------------------|---------------|
-| 🧠 Hook up frontend to API     | Replace in-memory chat logic with fetch/axios                     | ✅ Complete    |
-| 🧾 Fetch threads/messages on load | Populate UI from `/api/threads` and `/api/messages?threadId=...` | ✅ Complete    |
-| 💬 Post messages via API       | `onSend` uses POST `/api/messages`                               | ✅ Complete    |
-| 🔁 Move to chat                | `POST /api/move/{id}` works and updates thread view               | ✅ Complete    |
-| ♻️ Refactor state              | Replaced local-only state with persistent fetched state           | ✅ Complete    |
+| Area                    | Description                                          | Status       |
+|-------------------------|------------------------------------------------------|--------------|
+| Storage (memory/sqlite) | Full CRUD + subtree move coverage                    | ✅ Complete   |
+| Settings (both backends)| CRUD test suite with parity                         | ✅ Complete   |
+| Shared test helpers     | Ensures consistent logic across implementations      | ✅ Complete   |
 
 ---
 
-## 🧪 Testing Coverage
+## 🐳 DevOps & Tooling
 
-- ✅ Unit tests for `memory` and `sqlite` storage backends
-- ✅ Shared test helpers ensure backend parity
-- ✅ Full CRUD + `MoveSubtree` tree logic tested
-- ✅ SQLite test DB cleanup handled automatically
-
----
-
-## 🧩 LLM Simulation
-
-- ✅ Simulated replies via `**You said:**`
-- 🔜 Plan to move LLM logic to a swappable backend service (Ollama, OpenAI, Claude)
+| Task                | Description                             | Status     |
+|---------------------|-----------------------------------------|------------|
+| Dockerized backend  | Multi-stage builds, configurable storage| ✅ Done     |
+| Makefile            | Debug, build, swagger init              | ✅ Done     |
+| Vite proxy config   | CORS-safe, API_BASE respected           | ✅ Done     |
+| Debug config        | IntelliJ-compatible `npm run debug`    | ✅ Done     |
 
 ---
 
-## 🛠 Tooling & Ops
+## 🌐 Frontend Integration
 
-- ✅ Swagger/OpenAPI via `swaggo`
-- ✅ `.env` support and proxy for frontend API
-- ✅ Dockerfile and docker-compose scaffolded
-- ⚠️ `.iml` IntelliJ module file detected — may want to `.gitignore`
-
----
-
-## ⏭️ Next Steps
-
-- [ ] Add settings/config endpoint
-- [ ] Support real LLM inference
-- [ ] Enable optional auth middleware
-- [ ] Export chats as JSON
-- [ ] Implement pagination + full-text search
-- [ ] Add integration tests for HTTP endpoints
-- [ ] Improve frontend design & error boundaries
+| Task                          | Description                                                   | Status     |
+|-------------------------------|---------------------------------------------------------------|------------|
+| Fetch threads/messages        | Hooked into backend `/api/threads` + `/api/messages`          | ✅ Done     |
+| Send messages via API         | Uses `POST /api/messages`                                     | ✅ Done     |
+| Move to chat                  | Calls `POST /api/move/:id`, updates UI state                  | ✅ Done     |
+| Settings UI                   | Displays settings from backend                                | ✅ Done     |
+| State refactor                | Replaced local-only state with API-driven state               | ✅ Done     |
 
 ---
 
-## 📁 Suggested .gitignore additions
+## 🔜 Next Up
 
-```gitignore
-.idea/
-*.iml
-testdata/
-sqlite.db
-dist/
-node_modules/
-.env
+| Feature              | Description                                            | Priority     |
+|----------------------|--------------------------------------------------------|--------------|
+| 🔐 Auth              | API key or token-based protection                      | 🟡 Medium     |
+| 🔍 Search            | Full-text search using SQLite FTS5                     | 🟡 Medium     |
+| 📤 Export            | Export threads/messages as JSON                        | 🔵 Low        |
+| 🔁 Pagination        | Limit/offset for `/messages`                           | 🟡 Medium     |
+| 📂 File support      | Attachments in messages                                | 🔵 Low        |
+| 🔒 Rate limiting     | Middleware-based DoS protection                        | 🟡 Medium     |
+| 🧪 Frontend tests     | Vite+Vitest test coverage for components               | 🟡 Medium     |
+| 🤖 LLM Integration   | Replace simulation with OpenAI/Ollama/etc.             | 🟠 High       |
+
+---
+
+_Last updated: 2025-05-13_
 

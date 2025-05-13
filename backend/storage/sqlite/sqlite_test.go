@@ -19,6 +19,7 @@ func TestSQLiteStorage(t *testing.T) {
 	}
 	testhelpers.RunStorageSuite(t, "sqlite", store)
 	testhelpers.RunMoveSubtreeSuite(t, "sqlite", store)
+	testhelpers.RunSettingsSuite(t, "sqlite", store)
 
 	_ = os.RemoveAll("./testdata")
 }

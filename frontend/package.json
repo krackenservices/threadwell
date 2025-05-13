@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "debug": "node --inspect-brk ./node_modules/vite/bin/vite.js",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",

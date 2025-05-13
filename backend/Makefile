@@ -35,6 +35,10 @@ build-all:
 	GOOS=darwin  GOARCH=arm64   go build -o $(OUTPUT_DIR)/$(APP_NAME)-darwin-arm64    $(CMD_DIR)/main.go
 	GOOS=windows GOARCH=amd64   go build -o $(OUTPUT_DIR)/$(APP_NAME)-windows-amd64.exe $(CMD_DIR)/main.go
 
+.PHONY: build-docker
+build-docker:
+	@docker build -t backend:latest .
+
 # === Clean ===
 .PHONY: clean
 clean:

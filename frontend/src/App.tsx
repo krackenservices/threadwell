@@ -10,6 +10,7 @@ import {
     createThread,
     moveSubtree,
 } from "@/api";
+import {SettingsDialog} from "@/components/Chat/SettingsDialog.tsx";
 
 
 
@@ -18,6 +19,8 @@ const App: React.FC = () => {
     const [currentThreadId, setCurrentThreadId] = useState<string | null>(null);
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
+    const [showSettings, setShowSettings] = useState(false);
+
 
     useEffect(() => {
         getThreads().then(setThreads);
@@ -87,6 +90,8 @@ const App: React.FC = () => {
     return (
         <div className="flex h-screen bg-background text-foreground">
             <div className="w-64 border-r p-4 flex flex-col gap-2">
+                <button onClick={() => setShowSettings(true)}>⚙️ Settings</button>
+                {showSettings && <SettingsDialog onClose={() => setShowSettings(false)} />}
                 <button onClick={handleNewChat}>+ New Chat</button>
                 {threads?.length ? threads.map((t) => (
                     <button key={t.id} onClick={() => setCurrentThreadId(t.id)}>
