@@ -19,9 +19,13 @@ export interface ChatMessage {
     timestamp: number;
 }
 
+export type LLMProvider = "simulator" | "openai" | "ollama" | "google";
+
 export interface Settings {
-    llm_provider: string;
-    llm_model: string;
-    llm_api_key?: string;
+    id: string;
+    llm_provider: LLMProvider;
     llm_endpoint: string;
+    llm_api_key?: string;
+    llm_model?: string;
+    simulate_only: boolean;
 }

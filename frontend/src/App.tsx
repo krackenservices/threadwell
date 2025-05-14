@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import type { ChatMessage, ChatThread } from "@/types";
+import { buildLLMHistory, callLLM } from "@/services/llm/llm";
 
 import ChatThreadView from "@/components/Chat/ChatThread";
 import MessageInput from "@/components/Chat/MessageInput";
@@ -48,12 +49,18 @@ const App: React.FC = () => {
 
         setMessages((prev) => [...prev || [], userMsg]);
 
+        const messageContext = userMsg.parent_id
+            ? buildLLMHistory([...messages, userMsg], userMsg.id)
+            : [{ role: "user", content: userMsg.content }];
+
+        const llmReply = await callLLM({ messages: messageContext });
+
         const reply = await createMessage({
             thread_id: currentThreadId,
             root_id: userMsg.root_id || userMsg.id,
             parent_id: userMsg.id,
             role: "assistant",
-            content: `**You said:** ${content.replace(/\n/g, " ").trim()}`,
+            content: llmReply.content,
             timestamp: Date.now() + 1,
         });
 
