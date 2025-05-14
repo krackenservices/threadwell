@@ -10,7 +10,7 @@ export const SettingsDialog: React.FC<{ onClose: () => void }> = ({ onClose }) =
         getSettings().then(setSettings).catch(console.error);
     }, []);
 
-    const handleChange = (key: keyof Settings, value: string) => {
+    const handleChange = (key: keyof Settings, value: string | boolean) => {
         if (!settings) return;
         setSettings({ ...settings, [key]: value });
     };
@@ -34,6 +34,14 @@ export const SettingsDialog: React.FC<{ onClose: () => void }> = ({ onClose }) =
     return (
         <div className="p-4 bg-background text-foreground border rounded w-[400px]">
             <h2 className="text-lg font-bold mb-2">Settings</h2>
+            <label className="flex items-center gap-2 mt-4">
+                <input
+                    type="checkbox"
+                    checked={settings.simulate_only}
+                    onChange={(e) => handleChange("simulate_only", e.target.checked )}
+                />
+                Simulate Only (no live LLM)
+            </label>
             <label className="block mb-2">
                 LLM Provider
                 <input

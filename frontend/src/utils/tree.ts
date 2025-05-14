@@ -40,3 +40,16 @@ export function buildMessageTree(messages: ChatMessage[]): ThreadedMessageNode[]
 
     return roots;
 }
+
+export function buildAncestryChain(messages: ChatMessage[], fromId: string): ChatMessage[] {
+    const map = new Map(messages.map((m) => [m.id, m]));
+    const chain: ChatMessage[] = [];
+
+    let current = map.get(fromId);
+    while (current) {
+        chain.unshift(current);
+        current = current.parent_id ? map.get(current.parent_id) : undefined;
+    }
+
+    return chain;
+}
