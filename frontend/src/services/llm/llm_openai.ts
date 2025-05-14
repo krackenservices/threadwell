@@ -9,7 +9,7 @@ export async function callOpenAI(req: LLMRequest, settings: Settings): Promise<L
             "Authorization": `Bearer ${settings.llm_api_key}`,
         },
         body: JSON.stringify({
-            model: settings.llm_name || "gpt-3.5-turbo",
+            model: settings.llm_model || "gpt-3.5-turbo",
             messages: req.messages,
         }),
     });

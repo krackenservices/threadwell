@@ -2,7 +2,7 @@ import type {LLMRequest, LLMResponse} from "./llm";
 import type {Settings} from "@/types";
 
 export async function callOllama(req: LLMRequest, settings: Settings): Promise<LLMResponse> {
-    const model = settings.llm_name || "llama3";
+    const model = settings.llm_model || "llama3";
 
     const res = await fetch(`${settings.llm_endpoint}/api/chat`, {
         method: "POST",
