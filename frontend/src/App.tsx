@@ -11,12 +11,16 @@ import {
     createThread,
     moveSubtree,
 } from "@/api";
-import {SettingsDialog} from "@/components/Chat/SettingsDialog.tsx";
-import {Button} from "@/components/ui/button.tsx";
+import { SettingsDialog } from "@/components/Chat/SettingsDialog.tsx";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import {
     Dialog,
     DialogTrigger,
 } from "@/components/ui/dialog"
+
+import { AppSidebar } from "@/components/sidebar.tsx";
+import {SidebarContent, SidebarProvider, SidebarRail} from "@/components/ui/sidebar.tsx";
 
 
 const App: React.FC = () => {
@@ -24,8 +28,6 @@ const App: React.FC = () => {
     const [currentThreadId, setCurrentThreadId] = useState<string | null>(null);
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
-    const [showSettings, setShowSettings] = useState(false);
-
 
     useEffect(() => {
         getThreads().then(setThreads);
@@ -72,13 +74,7 @@ const App: React.FC = () => {
         setActiveThreadId(reply.id);
     };
 
-    const handleNewChat = async () => {
-        const newThread = await createThread();
-        setThreads((prev) => [...prev || [], newThread]);
-        setCurrentThreadId(newThread.id);
-        setActiveThreadId(null);
-        setMessages([]);
-    };
+
 
     const handleReply = (id: string) => {
         setActiveThreadId(id);
@@ -101,18 +97,27 @@ const App: React.FC = () => {
     return (
         <div className="flex h-screen bg-background text-foreground">
             <div className="w-64 border-r p-4 flex flex-col gap-2">
-                <Dialog>
-                    <DialogTrigger asChild>
-                        <Button>⚙️ Settings</Button>
-                    </DialogTrigger>
-                    <SettingsDialog />
-                </Dialog>
-                <button onClick={handleNewChat}>+ New Chat</button>
-                {threads?.length ? threads.map((t) => (
-                    <button key={t.id} onClick={() => setCurrentThreadId(t.id)}>
-                        {t.title === "New Thread" ? `Chat ${t.id.slice(4, 8)}` : t.title}
-                    </button>
-                )): <p className="text-muted">No threads</p>}
+                <SidebarProvider>
+                    <SidebarContent>
+                        <Dialog>
+                            <DialogTrigger asChild>
+                                <Button>⚙️ Settings</Button>
+                            </DialogTrigger>
+                            <SettingsDialog />
+                        </Dialog>
+                        <AppSidebar onNewThreadCreated={(thread) => {
+                            setThreads((prev) => [...prev, thread]);
+                            setCurrentThreadId(thread.id);
+                            setActiveThreadId(null);
+                            setMessages([]);
+                        }}/>
+                        {threads?.length ? threads.map((t) => (
+                            <Button type="button" key={t.id} onClick={() => setCurrentThreadId(t.id)}>
+                                {t.title === "New Thread" ? `Chat ${t.id.slice(4, 8)}` : t.title}
+                            </Button>
+                        )): <p className="text-muted">No threads</p>}
+                    </SidebarContent>
+                </SidebarProvider>
             </div>
             <div className="flex flex-col flex-1">
                 {currentThreadId ? (
@@ -140,7 +145,7 @@ const App: React.FC = () => {
                     </>
                 ) : (
                     <div className="flex items-center justify-center h-full text-muted-foreground">
-                        Select or create a chat to start messaging.
+                        <Label> Select or create a chat to start messaging. </Label>
                     </div>
                 )}
             </div>

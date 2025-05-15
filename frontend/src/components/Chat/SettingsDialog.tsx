@@ -46,7 +46,7 @@ export const SettingsDialog: React.FC<{ onClose?: () => void; }> = ({ onClose })
     if (!settings) return <div className="p-4">Loading...</div>;
 
     return (
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="no-x-close">
         <DialogHeader>
                 <DialogTitle>Settings</DialogTitle>
                 <DialogDescription>
