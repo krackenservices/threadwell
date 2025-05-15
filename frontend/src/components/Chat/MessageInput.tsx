@@ -1,6 +1,7 @@
 import React, { useState, type KeyboardEvent } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 
 interface MessageInputProps {
     onSend: (text: string) => void;
@@ -33,12 +34,12 @@ const MessageInput: React.FC<MessageInputProps> = ({
         <div className="flex flex-col gap-2 p-4 border-t border-border bg-background">
             {activeThreadId && (
                 <div className="text-sm text-muted-foreground flex justify-between mb-1">
-    <span>
-      Following thread <code>{activeThreadId.slice(0, 6)}</code>
-    </span>
-                    <button className="underline" onClick={clearThread}>
+                    <Label>
+                      Following thread <code>{activeThreadId.slice(0, 6)}</code>
+                    </Label>
+                    <Button type="button" className="underline" onClick={clearThread}>
                         Clear thread
-                    </button>
+                    </Button>
                 </div>
             )}
             <Textarea
@@ -49,7 +50,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
                 className="resize-none min-h-[60px]"
             />
             <div className="flex justify-end">
-                <Button onClick={handleSend}>Send</Button>
+                <Button type="button" onClick={handleSend}>Send</Button>
             </div>
         </div>
     );
