@@ -8,10 +8,9 @@ import {
     getThreads,
     getMessages,
     createMessage,
-    createThread,
     moveSubtree,
 } from "@/api";
-import { SettingsDialog } from "@/components/Chat/SettingsDialog.tsx";
+import { SettingsDialog } from "@/components/SettingsDialog.tsx";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -20,7 +19,7 @@ import {
 } from "@/components/ui/dialog"
 
 import { AppSidebar } from "@/components/sidebar.tsx";
-import {SidebarContent, SidebarProvider, SidebarRail} from "@/components/ui/sidebar.tsx";
+import {SidebarContent, SidebarProvider} from "@/components/ui/sidebar.tsx";
 
 
 const App: React.FC = () => {
@@ -95,9 +94,8 @@ const App: React.FC = () => {
     };
 
     return (
-        <div className="flex h-screen bg-background text-foreground">
+        <SidebarProvider>
             <div className="w-64 border-r p-4 flex flex-col gap-2">
-                <SidebarProvider>
                     <SidebarContent>
                         <Dialog>
                             <DialogTrigger asChild>
@@ -117,7 +115,6 @@ const App: React.FC = () => {
                             </Button>
                         )): <p className="text-muted">No threads</p>}
                     </SidebarContent>
-                </SidebarProvider>
             </div>
             <div className="flex flex-col flex-1">
                 {currentThreadId ? (
@@ -149,7 +146,7 @@ const App: React.FC = () => {
                     </div>
                 )}
             </div>
-        </div>
+        </SidebarProvider>
     );
 };
 
