@@ -1,8 +1,17 @@
 import React, { useEffect, useState } from "react";
 import { getSettings, updateSettings,  } from "@/api";
 import type { Settings } from '@/types.ts'
+import {
+    DialogClose,
+    DialogContent,
+    DialogDescription, DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog"
+import {Button} from "@/components/ui/button.tsx";
 
-export const SettingsDialog: React.FC<{ onClose: () => void }> = ({ onClose }) => {
+
+export const SettingsDialog: React.FC<{ onClose?: () => void; }> = ({ onClose }) => {
     const [settings, setSettings] = useState<Settings | null>(null);
     const [saving, setSaving] = useState(false);
 
@@ -15,12 +24,17 @@ export const SettingsDialog: React.FC<{ onClose: () => void }> = ({ onClose }) =
         setSettings({ ...settings, [key]: value });
     };
 
+    const handleSaveAndClose = async () => {
+        await handleSave();
+        onClose?.();
+        document.dispatchEvent(new Event("close-dialog"));
+    };
+
     const handleSave = async () => {
         if (!settings) return;
         setSaving(true);
         try {
             await updateSettings(settings);
-            onClose();
         } catch (err) {
             console.error(err);
             alert("Failed to save settings");
@@ -32,8 +46,14 @@ export const SettingsDialog: React.FC<{ onClose: () => void }> = ({ onClose }) =
     if (!settings) return <div className="p-4">Loading...</div>;
 
     return (
-        <div className="p-4 bg-background text-foreground border rounded w-[400px]">
-            <h2 className="text-lg font-bold mb-2">Settings</h2>
+        <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+                <DialogTitle>Settings</DialogTitle>
+                <DialogDescription>
+                    This action cannot be undone. This will permanently delete your account
+                    and remove your data from our servers.
+                </DialogDescription>
+            </DialogHeader>
             <label className="flex items-center gap-2 mt-4">
                 <input
                     type="checkbox"
@@ -79,11 +99,14 @@ export const SettingsDialog: React.FC<{ onClose: () => void }> = ({ onClose }) =
                 />
             </label>
             <div className="flex justify-end gap-2">
-                <button onClick={onClose} disabled={saving} className="underline">Cancel</button>
-                <button onClick={handleSave} disabled={saving} className="bg-blue-500 text-white px-4 py-1 rounded">
-                    Save
-                </button>
+                <DialogFooter className="sm:justify-start">
+                    <DialogClose asChild>
+                        <Button type="button" variant="secondary" onClick={handleSaveAndClose} disabled={saving}>
+                            Save and Exit
+                        </Button>
+                    </DialogClose>
+                </DialogFooter>
             </div>
-        </div>
+        </DialogContent>
     );
 };

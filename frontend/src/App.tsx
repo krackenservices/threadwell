@@ -12,7 +12,11 @@ import {
     moveSubtree,
 } from "@/api";
 import {SettingsDialog} from "@/components/Chat/SettingsDialog.tsx";
-
+import {Button} from "@/components/ui/button.tsx";
+import {
+    Dialog,
+    DialogTrigger,
+} from "@/components/ui/dialog"
 
 
 const App: React.FC = () => {
@@ -97,8 +101,12 @@ const App: React.FC = () => {
     return (
         <div className="flex h-screen bg-background text-foreground">
             <div className="w-64 border-r p-4 flex flex-col gap-2">
-                <button onClick={() => setShowSettings(true)}>⚙️ Settings</button>
-                {showSettings && <SettingsDialog onClose={() => setShowSettings(false)} />}
+                <Dialog>
+                    <DialogTrigger asChild>
+                        <Button>⚙️ Settings</Button>
+                    </DialogTrigger>
+                    <SettingsDialog />
+                </Dialog>
                 <button onClick={handleNewChat}>+ New Chat</button>
                 {threads?.length ? threads.map((t) => (
                     <button key={t.id} onClick={() => setCurrentThreadId(t.id)}>
