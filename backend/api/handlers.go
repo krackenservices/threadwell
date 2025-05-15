@@ -269,7 +269,7 @@ func messageIDHandler(w http.ResponseWriter, r *http.Request) {
 // @Summary Get or Update settings
 // @Accept json
 // @Produce json
-// @Param body models.Settings true "Updated settings"
+// @Param body body models.Settings true "Updated settings"
 // @Success 200 {object} models.Settings
 // @Router /api/settings [get]
 // @Router /api/settings [put]
