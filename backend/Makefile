@@ -5,18 +5,41 @@ OUTPUT_DIR=bin
 
 GOFILES=$(shell find . -type f -name '*.go' -not -path "./vendor/*")
 
+SWAG_VER := $(shell awk '/swaggo\/swag/ {print $$2}' go.mod)
+SWAG_VERSION := $(shell swag --version 2>/dev/null | awk '{print $$3}')
+
 # === Default ===
 .PHONY: all
 all: build
 
+.PHONY: run
+run: swagger
+	go run $(CMD_DIR)/main.go
 # === Debug (with air or fallback) ===
 .PHONY: debug
 debug:
 	@command -v air >/dev/null 2>&1 && air || go run $(CMD_DIR)/main.go
 
 # === Swagger (via swaggo) ===
-.PHONY: swagger
-swagger:
+.PHONY: installSwagger swagger
+
+installSwagger:
+ifeq ($(strip $(SWAG_VERSION)),)
+	@echo "Swag not found - Installing latest recommended version based on go.mod (${SWAG_VER}):"
+	go install github.com/swaggo/swag/cmd/swag@${SWAG_VER}
+else
+	@echo "Found Swag version: ${SWAG_VERSION}"
+ifeq ($(strip $(SWAG_VER)),$(strip $(SWAG_VERSION)))
+	@echo "Swag version is up-to-date."
+else
+	@echo "Version mismatch: Got '${SWAG_VERSION}' expected '${SWAG_VER}'."
+	go install github.com/swaggo/swag/cmd/swag@${SWAG_VER}
+
+endif
+endif
+	@echo "$(shell swag --version)"
+
+swagger: installSwagger
 	swag init --generalInfo $(CMD_DIR)/main.go --output ./docs
 
 # === Build for local OS ===

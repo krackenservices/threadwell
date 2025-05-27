@@ -45,7 +45,8 @@ func main() {
     case "memory":
         store = memory.New()
     default:
-        log.Fatalf("unsupported storage type: %s", cfg.Storage.Type)
+        log.Println("unsupported or undefined storage type: '%s' - Defaulting to Memory", cfg.Storage.Type)
+        store = memory.New()
     }
     if err != nil {
         log.Fatalf("storage init error: %v", err)
