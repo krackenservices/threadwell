@@ -62,7 +62,7 @@ Modern chat interactions—especially with LLMs—often diverge from the origina
 
 ## 📜 License
 
-Custom
+[MIT + Commons Clause](./LICENSE)
 
 ---
 
