@@ -31,6 +31,19 @@ Modern chat interactions—especially with LLMs—often diverge from the origina
 
 ---
 
+## Quick Start (developer only currently)
+
+Backend: (requires GO)
+- Open a terminal
+- `cd backend && STORAGE=memory go run cmd/threadwell/main.go`
+
+Frontend: (requires Nodes) 
+- Open a terminal
+- `cd frontend && npm ci && node run dev`
+
+
+---
+
 ## 🚧 Planned Enhancements
 
 - 📚 **Message Grouping**: Group by author, timestamp gaps, or content similarity.
