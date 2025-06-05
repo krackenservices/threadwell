@@ -82,9 +82,9 @@ Pull requests welcome. To contribute:
 
 2. 🧠 **Integrate Real LLM APIs**  
    Move the current simulated response logic into a `service` abstraction. Enable plug-and-play backends such as:
-   - Ollama
-   - OpenAI
-   - Claude
+   - [X] Ollama
+   - [ ] OpenAI
+   - [ ] Claude
 
 3. ⚙️ **Configuration Interface**  
    Let users configure backend providers and preferences. Store in a dedicated settings database.
