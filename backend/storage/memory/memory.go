@@ -152,7 +152,12 @@ func (m *MemoryStorage) MoveSubtree(fromMessageID string) (string, error) {
 	for oldID := range toMove {
 		idMap[oldID] = uuid.NewString()
 	}
-	rootOld := ancestry[0].ID
+	var rootOld string
+	if len(ancestry) > 0 {
+		rootOld = ancestry[0].ID
+	} else {
+		rootOld = orig.ID
+	}
 	rootNew := idMap[rootOld]
 
 	// 🧠 Step 5: Create new thread
@@ -171,7 +176,6 @@ func (m *MemoryStorage) MoveSubtree(fromMessageID string) (string, error) {
 		CreatedAt: time.Now().Unix(),
 	}
 
-	// 🧠 Step 6: Copy messages
 	// 🧠 Step 6: Copy messages
 	for _, old := range toMove {
 		newID := idMap[old.ID]

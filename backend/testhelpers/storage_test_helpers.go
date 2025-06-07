@@ -57,6 +57,36 @@ func RunStorageSuite(t *testing.T, name string, store storage.Storage) {
 }
 
 func RunMoveSubtreeSuite(t *testing.T, name string, store storage.Storage) {
+	t.Run(name+"/MoveSubtree_FromRoot", func(t *testing.T) {
+		require.NoError(t, store.Init())
+
+		thread := models.Thread{ID: uuid.NewString(), Title: "Base", CreatedAt: time.Now().Unix()}
+		require.NoError(t, store.CreateThread(thread))
+
+		root := models.Message{ID: uuid.NewString(), ThreadID: thread.ID, Role: "user", Content: "root", Timestamp: time.Now().Unix()}
+		child := models.Message{ID: uuid.NewString(), ThreadID: thread.ID, ParentID: &root.ID, RootID: &root.ID, Role: "assistant", Content: "child", Timestamp: time.Now().Unix()}
+
+		require.NoError(t, store.CreateMessage(root))
+		require.NoError(t, store.CreateMessage(child))
+
+		newThreadID, err := store.MoveSubtree(root.ID)
+		require.NoError(t, err)
+
+		msgsOrig, err := store.ListMessages(thread.ID)
+		require.NoError(t, err)
+		require.Len(t, msgsOrig, 0)
+
+		msgsNew, err := store.ListMessages(newThreadID)
+		require.NoError(t, err)
+		require.Len(t, msgsNew, 2)
+
+		contents := map[string]bool{}
+		for _, m := range msgsNew {
+			contents[m.Content] = true
+		}
+		require.True(t, contents["root"])
+		require.True(t, contents["child"])
+	})
 	t.Run(name+"/MoveSubtree_SimpleChain", func(t *testing.T) {
 		require.NoError(t, store.Init())
 

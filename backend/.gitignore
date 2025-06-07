@@ -3,3 +3,4 @@ docs/
 *.test
 *.sqlite
 bin/
+coverage.out

@@ -48,7 +48,10 @@ func (s *SQLiteStorage) MoveSubtree(fromID string) (string, error) {
 			var m models.Message
 			var parentID sql.NullString
 			if err := rows.Scan(&m.ID, &m.ThreadID, &parentID, &m.RootID, &m.Role, &m.Content, &m.Timestamp); err != nil {
-				rows.Close()
+				closeErr := rows.Close()
+				if closeErr != nil {
+					return "", fmt.Errorf("scan error: %w; additionally failed to close rows: %v", err, closeErr)
+				}
 				return "", err
 			}
 			if parentID.Valid {
@@ -57,7 +60,10 @@ func (s *SQLiteStorage) MoveSubtree(fromID string) (string, error) {
 			descendants[m.ID] = &m
 			queue = append(queue, m.ID)
 		}
-		rows.Close()
+		err = rows.Close()
+		if err != nil {
+			return "", err
+		}
 	}
 
 	// Step 4: Collect all to move
@@ -109,10 +115,23 @@ func (s *SQLiteStorage) MoveSubtree(fromID string) (string, error) {
         INSERT INTO messages (id, thread_id, parent_id, root_id, role, content, timestamp)
         VALUES (?, ?, ?, ?, ?, ?, ?)`)
 	if err != nil {
-		tx.Rollback()
+		rollbackerr := tx.Rollback()
+		if rollbackerr != nil {
+			return "", fmt.Errorf("prepare error: %w; additionally failed to rollback transaction: %v", err, rollbackerr)
+		}
 		return "", err
 	}
-	defer stmt.Close()
+	defer func() {
+		if closeErr := stmt.Close(); closeErr != nil {
+			// Log or propagate only if not already returning an error
+			if err == nil {
+				err = fmt.Errorf("stmt.Close failed: %w", closeErr)
+			} else {
+				// Optionally wrap both errors
+				err = fmt.Errorf("%w; stmt.Close also failed: %v", err, closeErr)
+			}
+		}
+	}()
 
 	for _, m := range messagesToMove {
 		newID := idMap[m.ID]
@@ -133,7 +152,10 @@ func (s *SQLiteStorage) MoveSubtree(fromID string) (string, error) {
 			m.Timestamp,
 		)
 		if err != nil {
-			tx.Rollback()
+			rollbackerr := tx.Rollback()
+			if rollbackerr != nil {
+				return "", fmt.Errorf("insert failed for %s → %s: %w; additionally failed to rollback transaction: %v", m.ID, newID, err, rollbackerr)
+			}
 			return "", fmt.Errorf("insert failed for %s → %s: %w", m.ID, newID, err)
 		}
 	}
@@ -142,7 +164,10 @@ func (s *SQLiteStorage) MoveSubtree(fromID string) (string, error) {
 	for id := range descendants {
 		_, err := tx.Exec(`DELETE FROM messages WHERE id = ?`, id)
 		if err != nil {
-			tx.Rollback()
+			rollbackerr := tx.Rollback()
+			if rollbackerr != nil {
+				return "", fmt.Errorf("failed to delete descendant %s: %w; additionally failed to rollback transaction: %v", id, err, rollbackerr)
+			}
 			return "", fmt.Errorf("failed to delete descendant %s: %w", id, err)
 		}
 	}
@@ -150,7 +175,10 @@ func (s *SQLiteStorage) MoveSubtree(fromID string) (string, error) {
 	// Also delete the original "from" message itself
 	_, err = tx.Exec(`DELETE FROM messages WHERE id = ?`, fromID)
 	if err != nil {
-		tx.Rollback()
+		rollbackerr := tx.Rollback()
+		if rollbackerr != nil {
+			return "", fmt.Errorf("failed to delete original message %s: %w; additionally failed to rollback transaction: %v", fromID, err, rollbackerr)
+		}
 		return "", fmt.Errorf("failed to delete original message %s: %w", fromID, err)
 	}
 
@@ -167,7 +195,12 @@ func (s *SQLiteStorage) ListMessages(threadID string) ([]models.Message, error) 
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+		closeErr := rows.Close()
+		if err == nil {
+			err = closeErr
+		}
+	}()
 
 	messages := make([]models.Message, 0)
 	for rows.Next() {

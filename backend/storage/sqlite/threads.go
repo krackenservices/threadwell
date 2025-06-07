@@ -11,7 +11,12 @@ func (s *SQLiteStorage) ListThreads() ([]models.Thread, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+		closeErr := rows.Close()
+		if err == nil { // Only overwrite if no earlier error
+			err = closeErr
+		}
+	}()
 
 	threads := make([]models.Thread, 0)
 	for rows.Next() {
