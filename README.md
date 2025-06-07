@@ -15,6 +15,7 @@ Modern chat interactions—especially with LLMs—often diverge from the origina
 
 **ThreadWell** solves this by introducing a tree-based threaded message system, enabling users to branch conversations naturally and isolate lines of thought.
 
+[Demo of an early build](https://youtu.be/2yh2nNxQV4M)
 ---
 
 ## ✨ Features

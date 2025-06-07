@@ -169,7 +169,7 @@ func (s *SQLiteStorage) ListMessages(threadID string) ([]models.Message, error) 
 	}
 	defer rows.Close()
 
-	var messages []models.Message
+	messages := make([]models.Message, 0)
 	for rows.Next() {
 		var m models.Message
 		var parentID, rootID sql.NullString

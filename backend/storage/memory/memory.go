@@ -70,13 +70,13 @@ func (m *MemoryStorage) DeleteThread(id string) error {
 func (m *MemoryStorage) ListMessages(threadID string) ([]models.Message, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	var out []models.Message
+	messages := make([]models.Message, 0)
 	for _, msg := range m.messages {
 		if msg.ThreadID == threadID {
-			out = append(out, msg)
+			messages = append(messages, msg)
 		}
 	}
-	return out, nil
+	return messages, nil
 }
 
 func (m *MemoryStorage) GetMessage(id string) (*models.Message, error) {
