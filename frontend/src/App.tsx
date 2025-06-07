@@ -1,12 +1,11 @@
 import React, { useState } from "react";
-import { useChat } from "@/hooks/useChat"; // <-- Import the new hook
+import { useChat } from "@/hooks/useChat";
 
 import ChatThreadView from "@/components/Chat/ChatThread";
 import MessageInput from "@/components/Chat/MessageInput";
 import { SettingsDialog } from "@/components/Chat/SettingsDialog";
 
 const App: React.FC = () => {
-    // All chat logic and state is now managed by the useChat hook.
     const {
         threads,
         currentThreadId,

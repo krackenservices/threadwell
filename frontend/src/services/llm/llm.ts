@@ -1,8 +1,8 @@
 import { getSettings } from "@/api";
 import type {ChatMessage, Settings} from "@/types";
-import { simulateLLM } from "@/services/llm//llm_simulated";
-import { callOpenAI } from "@/services/llm//llm_openai";
-import { callOllama } from "@/services/llm//llm_ollama";
+import { simulateLLM } from "@/services/llm/llm_simulated";
+import { callOpenAI } from "@/services/llm/llm_openai";
+import { callOllama } from "@/services/llm/llm_ollama";
 import { buildAncestryChain } from "@/utils/tree.ts";
 
 export interface LLMRequest {

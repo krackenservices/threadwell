@@ -76,7 +76,6 @@ export function useChat() {
             setActiveThreadId(reply.id);
         } catch (error) {
             console.error("Failed to send message:", error);
-            // Optionally, you could add an error message to the chat UI
         } finally {
             setIsLoading(false);
         }
