@@ -38,7 +38,7 @@ const ChatMessageBubble: React.FC<ChatMessageProps> = ({
                                 <div>↳ {message.parent_id.slice(0, 6)}</div>
                             )}
                         </div>
-                    </div>Root:
+                    </div>
 
                     {/* Padding on top to avoid overlap */}
                     <CardContent className="pt-14 pb-4 px-6 prose prose-invert max-w-full">

@@ -29,7 +29,11 @@ func RegisterRoutes(mux *http.ServeMux, s storage.Storage) {
 // @Success 200 {object} map[string]string
 // @Router /health [get]
 func healthHandler(w http.ResponseWriter, r *http.Request) {
-	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+	err := json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+	if err != nil {
+		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
 }
 
 // versionHandler returns build info
@@ -38,10 +42,14 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {object} map[string]string
 // @Router /version [get]
 func versionHandler(w http.ResponseWriter, r *http.Request) {
-	json.NewEncoder(w).Encode(map[string]string{
+	err := json.NewEncoder(w).Encode(map[string]string{
 		"version": "0.1.0",
 		"name":    "threadwell",
 	})
+	if err != nil {
+		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
 }
 
 // threadsHandler handles GET/POST threads
@@ -60,7 +68,11 @@ func threadsHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(threads)
+		err = json.NewEncoder(w).Encode(threads)
+		if err != nil {
+			http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+			return
+		}
 		return
 	}
 
@@ -81,7 +93,11 @@ func threadsHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(t)
+		err := json.NewEncoder(w).Encode(t)
+		if err != nil {
+			http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+			return
+		}
 		return
 	}
 
@@ -110,7 +126,11 @@ func messagesHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(msgs)
+		err = json.NewEncoder(w).Encode(msgs)
+		if err != nil {
+			http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+			return
+		}
 		return
 	}
 
@@ -131,7 +151,11 @@ func messagesHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(m)
+		err := json.NewEncoder(w).Encode(m)
+		if err != nil {
+			http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+			return
+		}
 		return
 	}
 
@@ -168,7 +192,11 @@ func moveHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{"thread_id": newThreadID})
+	err = json.NewEncoder(w).Encode(map[string]string{"thread_id": newThreadID})
+	if err != nil {
+		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
 }
 
 // threadDeleteHandler handles DELETE /api/threads/{id}
@@ -198,7 +226,11 @@ func threadDeleteHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{"deleted": id})
+	err := json.NewEncoder(w).Encode(map[string]string{"deleted": id})
+	if err != nil {
+		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
 }
 
 // messageIDHandler handles GET, PUT, DELETE for /api/messages/{id}
@@ -232,7 +264,11 @@ func messageIDHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(msg)
+		err = json.NewEncoder(w).Encode(msg)
+		if err != nil {
+			http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+			return
+		}
 
 	case http.MethodPut:
 		var m models.Message
@@ -250,7 +286,11 @@ func messageIDHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(m)
+		err := json.NewEncoder(w).Encode(m)
+		if err != nil {
+			http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+			return
+		}
 
 	case http.MethodDelete:
 		if err := backend.DeleteMessage(id); err != nil {
@@ -258,7 +298,11 @@ func messageIDHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]string{"deleted": id})
+		err := json.NewEncoder(w).Encode(map[string]string{"deleted": id})
+		if err != nil {
+			http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+			return
+		}
 
 	default:
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)

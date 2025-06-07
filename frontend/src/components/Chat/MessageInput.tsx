@@ -6,12 +6,14 @@ interface MessageInputProps {
     onSend: (text: string) => void;
     activeThreadId: string | null;
     clearThread: () => void;
+    disabled?: boolean;
 }
 
 const MessageInput: React.FC<MessageInputProps> = ({
                                                        onSend,
                                                        activeThreadId,
                                                        clearThread,
+                                                       disabled = false,
                                                    }) => {
     const [text, setText] = useState("");
 
@@ -45,7 +47,8 @@ const MessageInput: React.FC<MessageInputProps> = ({
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Type a message…"
+                placeholder={disabled ? "Processing..." : "Type a message…"}
+                disabled={disabled}
                 className="resize-none min-h-[60px]"
             />
             <div className="flex justify-end">

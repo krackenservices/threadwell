@@ -70,13 +70,13 @@ func (m *MemoryStorage) DeleteThread(id string) error {
 func (m *MemoryStorage) ListMessages(threadID string) ([]models.Message, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	var out []models.Message
+	messages := make([]models.Message, 0)
 	for _, msg := range m.messages {
 		if msg.ThreadID == threadID {
-			out = append(out, msg)
+			messages = append(messages, msg)
 		}
 	}
-	return out, nil
+	return messages, nil
 }
 
 func (m *MemoryStorage) GetMessage(id string) (*models.Message, error) {
@@ -152,7 +152,12 @@ func (m *MemoryStorage) MoveSubtree(fromMessageID string) (string, error) {
 	for oldID := range toMove {
 		idMap[oldID] = uuid.NewString()
 	}
-	rootOld := ancestry[0].ID
+	var rootOld string
+	if len(ancestry) > 0 {
+		rootOld = ancestry[0].ID
+	} else {
+		rootOld = orig.ID
+	}
 	rootNew := idMap[rootOld]
 
 	// 🧠 Step 5: Create new thread
@@ -171,7 +176,6 @@ func (m *MemoryStorage) MoveSubtree(fromMessageID string) (string, error) {
 		CreatedAt: time.Now().Unix(),
 	}
 
-	// 🧠 Step 6: Copy messages
 	// 🧠 Step 6: Copy messages
 	for _, old := range toMove {
 		newID := idMap[old.ID]

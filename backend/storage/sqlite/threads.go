@@ -11,9 +11,14 @@ func (s *SQLiteStorage) ListThreads() ([]models.Thread, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+		closeErr := rows.Close()
+		if err == nil { // Only overwrite if no earlier error
+			err = closeErr
+		}
+	}()
 
-	var threads []models.Thread
+	threads := make([]models.Thread, 0)
 	for rows.Next() {
 		var t models.Thread
 		if err := rows.Scan(&t.ID, &t.Title, &t.CreatedAt); err != nil {

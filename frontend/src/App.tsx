@@ -1,123 +1,72 @@
-import React, { useEffect, useState } from "react";
-import type { ChatMessage, ChatThread } from "@/types";
-import { buildLLMHistory, callLLM } from "@/services/llm/llm";
+import React, { useState } from "react";
+import { useChat } from "@/hooks/useChat";
 
 import ChatThreadView from "@/components/Chat/ChatThread";
 import MessageInput from "@/components/Chat/MessageInput";
-import {
-    getThreads,
-    getMessages,
-    createMessage,
-    createThread,
-    moveSubtree,
-} from "@/api";
-import {SettingsDialog} from "@/components/Chat/SettingsDialog.tsx";
-
-
+import { SettingsDialog } from "@/components/Chat/SettingsDialog";
 
 const App: React.FC = () => {
-    const [threads, setThreads] = useState<ChatThread[]>([]);
-    const [currentThreadId, setCurrentThreadId] = useState<string | null>(null);
-    const [messages, setMessages] = useState<ChatMessage[]>([]);
-    const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
+    const {
+        threads,
+        currentThreadId,
+        messages,
+        activeThreadId,
+        isLoading,
+        handleSend,
+        handleNewChat,
+        handleReply,
+        handleClearThread,
+        handleMoveToChat,
+        handleSetCurrentThreadId,
+    } = useChat();
+
+    // UI-specific state, like the visibility of a dialog, can remain in the component.
     const [showSettings, setShowSettings] = useState(false);
-
-
-    useEffect(() => {
-        getThreads().then(setThreads);
-    }, []);
-
-    useEffect(() => {
-        if (currentThreadId) {
-            getMessages(currentThreadId)
-                .then(setMessages)
-                .catch(() => setMessages([])); // fallback to avoid crash
-        }
-    }, [currentThreadId]);
-
-    const handleSend = async (content: string) => {
-        if (!currentThreadId) return;
-
-        const userMsg = await createMessage({
-            thread_id: currentThreadId,
-            root_id: activeThreadId || undefined,
-            parent_id: activeThreadId || undefined,
-            role: "user",
-            content,
-            timestamp: Date.now(),
-        });
-
-        setMessages((prev) => [...prev || [], userMsg]);
-
-        const messageContext = userMsg.parent_id
-            ? buildLLMHistory([...messages, userMsg], userMsg.id)
-            : [{ role: "user", content: userMsg.content }];
-
-        const llmReply = await callLLM({ messages: messageContext });
-
-        const reply = await createMessage({
-            thread_id: currentThreadId,
-            root_id: userMsg.root_id || userMsg.id,
-            parent_id: userMsg.id,
-            role: "assistant",
-            content: llmReply.content,
-            timestamp: Date.now() + 1,
-        });
-
-        setMessages((prev) => [...prev, reply]);
-        setActiveThreadId(reply.id);
-    };
-
-    const handleNewChat = async () => {
-        const newThread = await createThread();
-        setThreads((prev) => [...prev || [], newThread]);
-        setCurrentThreadId(newThread.id);
-        setActiveThreadId(null);
-        setMessages([]);
-    };
-
-    const handleReply = (id: string) => {
-        setActiveThreadId(id);
-    };
-
-    const handleClearThread = () => {
-        setActiveThreadId(null);
-    };
-
-    const handleMoveToChat = async (fromMessageId: string) => {
-        const newThreadId = await moveSubtree(fromMessageId);
-        const newThreads = await getThreads();
-        setThreads(newThreads);
-        setCurrentThreadId(newThreadId);
-        setActiveThreadId(null);
-        const movedMessages = await getMessages(newThreadId);
-        setMessages(movedMessages);
-    };
 
     return (
         <div className="flex h-screen bg-background text-foreground">
+            {/* --- Sidebar UI --- */}
             <div className="w-64 border-r p-4 flex flex-col gap-2">
                 <button onClick={() => setShowSettings(true)}>⚙️ Settings</button>
                 {showSettings && <SettingsDialog onClose={() => setShowSettings(false)} />}
-                <button onClick={handleNewChat}>+ New Chat</button>
-                {threads?.length ? threads.map((t) => (
-                    <button key={t.id} onClick={() => setCurrentThreadId(t.id)}>
-                        {t.title === "New Thread" ? `Chat ${t.id.slice(4, 8)}` : t.title}
-                    </button>
-                )): <p className="text-muted">No threads</p>}
+
+                <button onClick={handleNewChat} disabled={isLoading}>
+                    + New Chat
+                </button>
+
+                {threads?.length > 0 ? (
+                    threads.map((t) => (
+                        <button
+                            key={t.id}
+                            onClick={() => handleSetCurrentThreadId(t.id)}
+                            disabled={isLoading}
+                            className={currentThreadId === t.id ? 'font-bold' : ''}
+                        >
+                            {t.title === "New Thread" ? `Chat ${t.id.slice(4, 8)}` : t.title}
+                        </button>
+                    ))
+                ) : (
+                    <p className="text-sm text-muted-foreground">No threads yet.</p>
+                )}
             </div>
+
+            {/* --- Main Content UI --- */}
             <div className="flex flex-col flex-1">
                 {currentThreadId ? (
                     <>
                         <div className="flex-1 overflow-auto bg-neutral-950">
                             <div className="min-w-full min-h-full flex justify-center items-start">
                                 <div className="p-10 inline-flex">
-                                    <ChatThreadView
-                                        messages={messages}
-                                        onReply={handleReply}
-                                        onMoveToChat={handleMoveToChat}
-                                        activeThreadId={activeThreadId}
-                                    />
+                                    {isLoading && messages.length === 0 ? (
+                                        <p>Loading chat...</p>
+                                    ) : (
+                                        <ChatThreadView
+                                            messages={messages}
+                                            onReply={handleReply}
+                                            onMoveToChat={handleMoveToChat}
+                                            activeThreadId={activeThreadId}
+                                        />
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -128,6 +77,7 @@ const App: React.FC = () => {
                             onSend={handleSend}
                             activeThreadId={activeThreadId}
                             clearThread={handleClearThread}
+                            disabled={isLoading}
                         />
                     </>
                 ) : (

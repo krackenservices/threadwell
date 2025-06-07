@@ -62,6 +62,21 @@ build-all:
 build-docker:
 	@docker build -t backend:latest .
 
+# === Test ===
+.PHONY: test
+test: lint
+	@echo "Running tests..."
+	@go test -v ./... -coverprofile=coverage.out
+	@echo "Tests completed."
+
+# === Lint ===
+.PHONY: lint
+lint:
+	@echo "Running linter..."
+	@go vet ./...
+	@go fmt ./...
+	@golangci-lint run --timeout 5m
+	@echo "Linting completed."
 # === Clean ===
 .PHONY: clean
 clean:
