@@ -72,7 +72,7 @@ export function useChat() {
                 timestamp: Date.now() + 1,
             });
 
-            setMessages((prev) => [...(prev || []), userMsg, reply]); // Add both at once for smoother UI
+            setMessages((prev) => [...(prev || []), reply]);
             setActiveThreadId(reply.id);
         } catch (error) {
             console.error("Failed to send message:", error);
