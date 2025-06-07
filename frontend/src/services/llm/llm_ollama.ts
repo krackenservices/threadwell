@@ -10,7 +10,7 @@ export async function callOllama(req: LLMRequest, settings: Settings): Promise<L
             "Content-Type": "application/json",
         },
         body: JSON.stringify({
-            model,
+            model: model,
             messages: req.messages,
             stream: false,
         }),
