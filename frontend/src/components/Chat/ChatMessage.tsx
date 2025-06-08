@@ -3,6 +3,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import type { ChatMessage } from "@/types";
 import ReactMarkdown from "react-markdown";
+import { User, Bot, GitFork, Reply } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface ChatMessageProps {
     message: ChatMessage;
@@ -12,60 +14,76 @@ interface ChatMessageProps {
     isLeaf?: boolean;
 }
 
-const roleColors: Record<ChatMessage["role"], string> = {
-    user: "bg-blue-800 text-white",
-    assistant: "bg-zinc-800 text-white",
-    system: "bg-gray-600 text-white",
+const roleStyles: Record<ChatMessage["role"], { bubble: string, avatar: string }> = {
+    user: {
+        bubble: "bg-primary/10 border-primary/20",
+        avatar: "bg-primary/20 text-primary",
+    },
+    assistant: {
+        bubble: "bg-card",
+        avatar: "bg-muted",
+    },
+    system: {
+        bubble: "bg-yellow-900/50 border-yellow-700/50",
+        avatar: "bg-yellow-800",
+    },
 };
+
+const RoleAvatar: React.FC<{ role: ChatMessage["role"] }> = ({ role }) => {
+    const Icon = role === "user" ? User : Bot;
+    return (
+        <div className={cn(
+            "size-8 rounded-full flex items-center justify-center flex-shrink-0",
+            roleStyles[role].avatar
+        )}>
+            <Icon size={18} />
+        </div>
+    );
+};
+
 
 const ChatMessageBubble: React.FC<ChatMessageProps> = ({
                                                            message,
                                                            onReply,
                                                            highlight = false,
-                                                            onMoveToChat
+                                                           onMoveToChat,
                                                        }) => {
-    const roleClass = roleColors[message.role] || "bg-gray-700 text-white";
+    const styles = roleStyles[message.role] || roleStyles.assistant;
 
     return (
-        <div className="w-full my-4">
-            <div className="relative w-full">
-                <Card className={`min-w-[400px] w-fit rounded-xl shadow relative ${roleClass} ${highlight ? "bg-zinc-900 border-l-4 border-purple-400" : ""}`}>
-                    {/* Thread Info pinned top-right and right-aligned */}
-                    <div className="flex justify-end px-4 pt-3 text-xs text-muted-foreground italic">
-                        <div className="text-right">
-                            <div>Root: {message.root_id?.slice(0, 6) ?? "None"}</div>
-                            {message.parent_id && (
-                                <div>↳ {message.parent_id.slice(0, 6)}</div>
-                            )}
-                        </div>
-                    </div>
+        <div className="group w-full my-4 flex items-start gap-4">
+            <RoleAvatar role={message.role} />
 
-                    {/* Padding on top to avoid overlap */}
-                    <CardContent className="pt-14 pb-4 px-6 prose prose-invert max-w-full">
+            <div className="flex-1">
+                <Card className={cn("rounded-xl shadow relative", styles.bubble, highlight && "ring-2 ring-accent")}>
+                    <CardContent className="p-4 prose prose-invert max-w-full">
                         <ReactMarkdown>{message.content}</ReactMarkdown>
-
-                        {onReply && message.role !== "user" && (
-                            <Button
-                                variant="link"
-                                size="sm"
-                                className="text-muted-foreground p-0 h-auto mt-2"
-                                onClick={onReply}
-                            >
-                                Reply
-                            </Button>
-                        )}
-                        {onMoveToChat && message.role === "user" && (
-                            <Button
-                                variant="link"
-                                size="sm"
-                                className="text-muted-foreground p-0 h-auto ml-4"
-                                onClick={() => onMoveToChat(message.id)}
-                            >
-                                Move to Chat
-                            </Button>
-                        )}
                     </CardContent>
                 </Card>
+            </div>
+
+            {/* Hover Actions */}
+            <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                {onReply && message.role === "assistant" && (
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={onReply}
+                        title="Reply to this message"
+                    >
+                        <Reply className="size-4" />
+                    </Button>
+                )}
+                {onMoveToChat && message.role === "user" && (
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => onMoveToChat(message.id)}
+                        title="Move this message to a new chat"
+                    >
+                        <GitFork className="size-4" />
+                    </Button>
+                )}
             </div>
         </div>
     );
