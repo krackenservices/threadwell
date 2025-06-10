@@ -1,9 +1,12 @@
 import React, { useState } from "react";
 import { useChat } from "@/hooks/useChat";
+import { Settings, MessageSquarePlus } from "lucide-react";
 
 import ChatThreadView from "@/components/Chat/ChatThread";
 import MessageInput from "@/components/Chat/MessageInput";
 import { SettingsDialog } from "@/components/Chat/SettingsDialog";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const App: React.FC = () => {
     const {
@@ -26,32 +29,60 @@ const App: React.FC = () => {
     return (
         <div className="flex h-screen bg-background text-foreground">
             {/* --- Sidebar UI --- */}
-            <div className="w-64 border-r p-4 flex flex-col gap-2">
-                <button onClick={() => setShowSettings(true)}>⚙️ Settings</button>
-                {showSettings && <SettingsDialog onClose={() => setShowSettings(false)} />}
-
-                <button onClick={handleNewChat} disabled={isLoading}>
-                    + New Chat
-                </button>
-
-                {threads?.length > 0 ? (
-                    threads.map((t) => (
-                        <button
-                            key={t.id}
-                            onClick={() => handleSetCurrentThreadId(t.id)}
+            <aside className="w-72 flex flex-col bg-sidebar text-sidebar-foreground p-4">
+                <div className="flex-1 overflow-y-auto">
+                    <div className="p-2">
+                        <Button
+                            variant="secondary"
+                            className="w-full justify-start gap-2"
+                            onClick={handleNewChat}
                             disabled={isLoading}
-                            className={currentThreadId === t.id ? 'font-bold' : ''}
                         >
-                            {t.title === "New Thread" ? `Chat ${t.id.slice(4, 8)}` : t.title}
-                        </button>
-                    ))
-                ) : (
-                    <p className="text-sm text-muted-foreground">No threads yet.</p>
-                )}
-            </div>
+                            <MessageSquarePlus size={18} />
+                            New Chat
+                        </Button>
+                    </div>
+
+                    <ScrollArea className="flex-1">
+                        <nav className="flex flex-col gap-2 p-2">
+                            {threads?.length > 0 ? (
+                                threads.map((t) => (
+                                    <Button
+                                        key={t.id}
+                                        variant={currentThreadId === t.id ? "secondary" : "ghost"}
+                                        className="w-full justify-start"
+                                        onClick={() => handleSetCurrentThreadId(t.id)}
+                                        disabled={isLoading}
+                                    >
+                                        <span className="truncate">
+                                            {t.title === "New Thread" ? `Chat ${t.id.slice(4, 8)}` : t.title}
+                                        </span>
+                                    </Button>
+                                ))
+                            ) : (
+                                <p className="p-4 text-sm text-muted-foreground">No threads yet.</p>
+                            )}
+                        </nav>
+                    </ScrollArea>
+                </div>
+
+                <div className="p-2">
+                    <Button
+                        variant="ghost"
+                        className="w-full justify-start gap-2"
+                        onClick={() => setShowSettings(true)}
+                    >
+                        <Settings size={18} />
+                        Settings
+                    </Button>
+                </div>
+
+                {showSettings && <SettingsDialog onClose={() => setShowSettings(false)} />}
+            </aside>
+
 
             {/* --- Main Content UI --- */}
-            <div className="flex flex-col flex-1">
+            <main className="flex flex-col flex-1">
                 {currentThreadId ? (
                     <>
                         <div className="flex-1 overflow-auto bg-neutral-950">
@@ -85,7 +116,7 @@ const App: React.FC = () => {
                         Select or create a chat to start messaging.
                     </div>
                 )}
-            </div>
+            </main>
         </div>
     );
 };
