@@ -1,9 +1,8 @@
+@import "tailwindcss/preflight";
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
 
-@tailwind base;
-@tailwind components;
 @tailwind utilities;
 
 @theme inline {
@@ -120,4 +119,8 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+.activeThread {
+  @apply bg-[#336699]/8;
 }
