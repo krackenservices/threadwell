@@ -20,9 +20,30 @@ export function useChat() {
     const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
 
-    // Effect to fetch initial threads on component mount
+    // Effect to fetch initial threads and handle URL-based routing on load
     useEffect(() => {
-        getThreads().then(setThreads).catch(console.error);
+        getThreads().then(threads => {
+            setThreads(threads);
+
+            // After fetching threads, determine the initial chat from the URL
+            const path = window.location.pathname;
+            const match = path.match(/^\/chat\/([a-zA-Z0-9-:]+)/);
+            if (match && threads.some(t => t.id === match[1])) {
+                setCurrentThreadId(match[1]);
+            }
+        }).catch(console.error);
+
+        // Listen for browser back/forward navigation
+        const handlePopState = () => {
+            const path = window.location.pathname;
+            const match = path.match(/^\/chat\/([a-zA-Z0-9-:]+)/);
+            setCurrentThreadId(match ? match[1] : null);
+        };
+
+        window.addEventListener('popstate', handlePopState);
+        return () => {
+            window.removeEventListener('popstate', handlePopState);
+        };
     }, []);
 
     // Effect to fetch messages when the current thread changes
@@ -82,36 +103,36 @@ export function useChat() {
     };
 
     /**
-     * Creates a new chat thread and sets it as the current one.
-     */
-    const handleNewChat = async () => {
-        const newThread = await createThread();
-        setThreads((prev) => [...(prev || []), newThread]);
-        setCurrentThreadId(newThread.id);
-        setActiveThreadId(null);
-    };
-
-    /**
-     * Moves a message and its descendants to a new chat thread.
-     * @param fromMessageId The ID of the message to move.
-     */
-    const handleMoveToChat = async (fromMessageId: string) => {
-        const newThreadId = await moveSubtree(fromMessageId);
-        // Refresh threads list and switch to the new thread
-        const newThreads = await getThreads();
-        setThreads(newThreads);
-        setCurrentThreadId(newThreadId);
-        setActiveThreadId(null);
-    };
-
-    /**
-     * Sets the current thread ID and resets the active reply ID.
+     * Sets the current thread ID, resets the active reply ID, and updates the URL.
      * @param id The ID of the thread to switch to.
      */
     const handleSetCurrentThreadId = (id: string | null) => {
         setCurrentThreadId(id);
         setActiveThreadId(null); // Reset active reply thread when switching main thread
+
+        const url = id ? `/chat/${id}` : '/';
+        const title = id ? `Chat ${id}` : 'ThreadWell';
+        window.history.pushState({ threadId: id }, title, url);
     }
+
+    /**
+     * Creates a new chat thread and sets it as the current one.
+     */
+    const handleNewChat = async () => {
+        const newThread = await createThread();
+        setThreads((prev) => [...(prev || []), newThread]);
+        handleSetCurrentThreadId(newThread.id);
+    };
+
+    /**
+     * Moves a message and its descendants to a new chat thread.
+     */
+    const handleMoveToChat = async (fromMessageId: string) => {
+        const newThreadId = await moveSubtree(fromMessageId);
+        const newThreads = await getThreads();
+        setThreads(newThreads);
+        handleSetCurrentThreadId(newThreadId);
+    };
 
     // Return all state and handlers needed by the UI
     return {
