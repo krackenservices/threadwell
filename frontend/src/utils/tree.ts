@@ -53,3 +53,32 @@ export function buildAncestryChain(messages: ChatMessage[], fromId: string): Cha
 
     return chain;
 }
+
+function findLeaf(node: ThreadedMessageNode): ThreadedMessageNode {
+    let currentNode = node;
+    // The children are sorted by timestamp in buildMessageTree, so index 0 is always the leftmost direct child.
+    while (currentNode.children && currentNode.children.length > 0) {
+        currentNode = currentNode.children[0];
+    }
+    return currentNode;
+}
+
+export function findDefaultParent(messages: ChatMessage[]): ChatMessage | null {
+    if (!messages || messages.length === 0) return null;
+    const roots = buildMessageTree(messages);
+    if (roots.length === 0) return null;
+
+    // Get the latest root message node
+    const lastRoot = roots[roots.length - 1];
+
+    // If the latest root has children (branches)
+    if (lastRoot.children && lastRoot.children.length > 0) {
+        // The default branch is the leftmost one, which is the first child because they are sorted by timestamp.
+        const leftMostBranchStartNode = lastRoot.children[0];
+        // Find the last message (the leaf) in this branch.
+        const defaultParentNode = findLeaf(leftMostBranchStartNode);
+        return defaultParentNode.message;
+    }
+
+    return null;
+}

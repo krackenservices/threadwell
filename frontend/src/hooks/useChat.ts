@@ -8,6 +8,7 @@ import {
     moveSubtree,
 } from '@/api';
 import { buildLLMHistory, callLLM } from '@/services/llm/llm';
+import { findDefaultParent } from "@/utils/tree"; // <-- Import the new function
 
 /**
  * Custom hook to encapsulate all chat-related logic,
@@ -20,7 +21,6 @@ export function useChat() {
     const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
 
-    // Effect to fetch initial threads and handle URL-based routing on load
     useEffect(() => {
         getThreads().then(threads => {
             setThreads(threads);
@@ -46,18 +46,18 @@ export function useChat() {
         };
     }, []);
 
-    // Effect to fetch messages when the current thread changes
     useEffect(() => {
         if (currentThreadId) {
             setIsLoading(true);
             getMessages(currentThreadId)
                 .then(setMessages)
-                .catch(() => setMessages([])) // Fallback to avoid crash
+                .catch(() => setMessages([])) // Fallback
                 .finally(() => setIsLoading(false));
         } else {
             setMessages([]); // Clear messages if no thread is selected
         }
     }, [currentThreadId]);
+
 
     /**
      * Handles sending a new message and receiving a reply from the LLM.
@@ -66,12 +66,27 @@ export function useChat() {
     const handleSend = async (content: string) => {
         if (!currentThreadId) return;
 
+        let parent: ChatMessage | null = null;
+        if (activeThreadId) {
+            // Find the explicitly selected parent message
+            parent = messages.find(m => m.id === activeThreadId) || null;
+        } else {
+            // If no message is active, find the default parent from the leftmost branch
+            parent = findDefaultParent(messages);
+        }
+
+        const parentId = parent?.id;
+        // The root of the new message is the parent's root, or the parent itself if it's a root.
+        // If parent is null, this will be undefined, creating a new root message as before.
+        const rootId = parent?.root_id || parent?.id;
+
+
         setIsLoading(true);
         try {
             const userMsg = await createMessage({
                 thread_id: currentThreadId,
-                root_id: activeThreadId || undefined,
-                parent_id: activeThreadId || undefined,
+                root_id: rootId,
+                parent_id: parentId,
                 role: "user",
                 content,
                 timestamp: Date.now(),
@@ -102,10 +117,6 @@ export function useChat() {
         }
     };
 
-    /**
-     * Sets the current thread ID, resets the active reply ID, and updates the URL.
-     * @param id The ID of the thread to switch to.
-     */
     const handleSetCurrentThreadId = (id: string | null) => {
         setCurrentThreadId(id);
         setActiveThreadId(null); // Reset active reply thread when switching main thread
@@ -115,18 +126,12 @@ export function useChat() {
         window.history.pushState({ threadId: id }, title, url);
     }
 
-    /**
-     * Creates a new chat thread and sets it as the current one.
-     */
     const handleNewChat = async () => {
         const newThread = await createThread();
         setThreads((prev) => [...(prev || []), newThread]);
         handleSetCurrentThreadId(newThread.id);
     };
 
-    /**
-     * Moves a message and its descendants to a new chat thread.
-     */
     const handleMoveToChat = async (fromMessageId: string) => {
         const newThreadId = await moveSubtree(fromMessageId);
         const newThreads = await getThreads();
@@ -134,7 +139,6 @@ export function useChat() {
         handleSetCurrentThreadId(newThreadId);
     };
 
-    // Return all state and handlers needed by the UI
     return {
         threads,
         currentThreadId,
@@ -143,7 +147,7 @@ export function useChat() {
         isLoading,
         handleSend,
         handleNewChat,
-        handleReply: setActiveThreadId, // This is just a state setter
+        handleReply: setActiveThreadId,
         handleClearThread: () => setActiveThreadId(null),
         handleMoveToChat,
         handleSetCurrentThreadId,
