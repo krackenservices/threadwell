@@ -18,7 +18,7 @@ const ThreadNode: React.FC<{
     onMoveToChat: (id: string) => void;
 }> = ({ node, level = 0, onReply, activeThreadId, activePathIds, onMoveToChat }) => {
     return (
-        <div className="relative flex flex-col items-center mb-12">
+        <div className="relative flex flex-col items-center mb-12 flex-shrink-0" >
             {level > 0 && (
                 <div className="absolute -top-6 h-6 w-px bg-muted left-1/2 transform -translate-x-1/2 z-0" />
             )}
@@ -34,7 +34,7 @@ const ThreadNode: React.FC<{
             </div>
 
             {node.children.length > 0 && (
-                <div className="mt-8 flex flex-row gap-6 flex-nowrap justify-center px-4">
+                <div className="mt-8 flex flex-row gap-6 flex-nowrap justify-start px-4">
                     {node.children.map((child) => (
                         <ThreadNode
                             key={child.message.id}
@@ -71,7 +71,7 @@ const ChatThreadView: React.FC<ChatThreadProps> = ({ messages, onReply, activeTh
     const activePathIds = tree.flatMap((node) => findAncestry(node, activeThreadId ?? "") ?? []);
 
     return (
-        <div className="p-10">
+        <div className="p-10 inline-block min-w-full">
             {tree.map((node) => (
                 <ThreadNode
                     key={node.message.id}
