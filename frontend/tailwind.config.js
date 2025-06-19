@@ -4,7 +4,7 @@ export default {
     theme: {
         extend: {
             ringColor: {
-                accent: '#d946ef', // Or whatever your 'accent' is
+                accent: '#d946ef',
             },
         },
     },

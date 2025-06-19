@@ -1,5 +1,6 @@
+@import "tailwindcss";
 @import "tailwindcss/preflight";
-@import "tw-animate-css";
+
 
 @custom-variant dark (&:is(.dark *));
 
@@ -45,7 +46,7 @@
 
 :root {
   --radius: 0.625rem;
-  --background: oklch(0.97 0.006 240);
+  --background: oklch(86.9%  0.022 252.894);
   --foreground: oklch(0.129 0.042 264.695);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.129 0.042 264.695);
@@ -68,7 +69,7 @@
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.87 0.006 240); /* Lighter gray for light mode sidebar */
+  --sidebar: oklch(88% 0.022 252.894); /* Lighter gray for light mode sidebar */
   --sidebar-foreground: oklch(0.129 0.042 264.695);
   --sidebar-primary: oklch(0.208 0.042 265.755);
   --sidebar-primary-foreground: oklch(0.984 0.003 247.858);

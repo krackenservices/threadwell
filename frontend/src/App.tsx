@@ -27,9 +27,9 @@ const App: React.FC = () => {
     const [showSettings, setShowSettings] = useState(false);
 
     return (
-        <div className="flex h-screen bg-background text-foreground">
+        <div className="flex h-screen bg-background dark:bg-background text-foreground">
             {/* --- Sidebar UI --- */}
-            <aside className="w-72 flex flex-col bg-sidebar text-sidebar-foreground p-4">
+            <aside className="w-40 flex flex-col flex-shrink-0 bg-sidebar text-sidebar-foreground p-4">
                 <div className="flex-1 overflow-y-auto">
                     <div className="p-2">
                         <Button
@@ -82,11 +82,11 @@ const App: React.FC = () => {
 
 
             {/* --- Main Content UI --- */}
-            <main className="flex flex-col flex-1">
+            <main className="flex flex-col flex-1 overflow-hidden bg-background">
                 {currentThreadId ? (
                     <>
-                        <div className="flex-1 overflow-auto bg-neutral-950">
-                            <div className="min-w-full min-h-full flex justify-center items-start">
+                        <div className="flex-1 overflow-auto">
+                            <div className="min-w-full min-h-full flex justify-start items-start">
                                 <div className="p-10 inline-flex">
                                     {isLoading && messages.length === 0 ? (
                                         <p>Loading chat...</p>
