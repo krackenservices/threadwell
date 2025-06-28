@@ -14,7 +14,7 @@ var backend storage.Storage
 func RegisterRoutes(mux *http.ServeMux, s storage.Storage) {
 	backend = s
 	mux.HandleFunc("/api/threads", threadsHandler)
-	mux.HandleFunc("/api/threads/", threadDeleteHandler)
+	mux.HandleFunc("/api/threads/", threadIDHandler) // Changed from threadDeleteHandler
 	mux.HandleFunc("/api/messages", messagesHandler)
 	mux.HandleFunc("/api/messages/", messageIDHandler)
 	mux.HandleFunc("/api/move/", moveHandler)
@@ -199,37 +199,61 @@ func moveHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// threadDeleteHandler handles DELETE /api/threads/{id}
-// @Summary Delete a thread and its messages
+type updateThreadPayload struct {
+	Title string `json:"title"`
+}
+
+// threadIDHandler handles PATCH and DELETE for /api/threads/{id}
+// @Summary Update or delete a thread
 // @Tags threads
+// @Accept json
 // @Produce json
 // @Param id path string true "Thread ID"
-// @Success 200 {object} map[string]string
+// @Success 200 {object} models.Thread
 // @Failure 400 {object} map[string]string
 // @Failure 500 {object} map[string]string
+// @Router /api/threads/{id} [patch]
 // @Router /api/threads/{id} [delete]
-func threadDeleteHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodDelete {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
+func threadIDHandler(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Path[len("/api/threads/"):]
 	if id == "" {
-		http.Error(w, `{"error":"id required"}`, http.StatusBadRequest)
+		WriteError(w, http.StatusBadRequest, "thread ID is required")
 		return
 	}
 
-	if err := backend.DeleteThread(id); err != nil {
-		http.Error(w, `{"error":"`+err.Error()+`"}`, http.StatusInternalServerError)
-		return
-	}
+	switch r.Method {
+	case http.MethodPatch:
+		var payload updateThreadPayload
+		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+			WriteError(w, http.StatusBadRequest, "invalid JSON body for patch")
+			return
+		}
 
-	w.Header().Set("Content-Type", "application/json")
-	err := json.NewEncoder(w).Encode(map[string]string{"deleted": id})
-	if err != nil {
-		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
-		return
+		// NOTE: You will need to implement GetThread and UpdateThread in your storage layer
+		thread, err := backend.GetThread(id)
+		if err != nil {
+			WriteError(w, http.StatusNotFound, "thread not found")
+			return
+		}
+
+		thread.Title = payload.Title
+
+		if err := backend.UpdateThread(*thread); err != nil {
+			WriteError(w, http.StatusInternalServerError, "failed to update thread")
+			return
+		}
+
+		WriteJSON(w, http.StatusOK, thread)
+
+	case http.MethodDelete:
+		if err := backend.DeleteThread(id); err != nil {
+			WriteError(w, http.StatusInternalServerError, "failed to delete thread")
+			return
+		}
+		WriteJSON(w, http.StatusOK, map[string]string{"deleted": id})
+
+	default:
+		WriteError(w, http.StatusMethodNotAllowed, "method not allowed")
 	}
 }
 

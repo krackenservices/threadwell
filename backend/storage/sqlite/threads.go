@@ -47,6 +47,12 @@ func (s *SQLiteStorage) CreateThread(t models.Thread) error {
 	return err
 }
 
+func (s *SQLiteStorage) UpdateThread(t models.Thread) error {
+	_, err := s.db.Exec(`UPDATE threads SET title = ? WHERE id = ?`,
+		t.Title, t.ID)
+	return err
+}
+
 func (s *SQLiteStorage) DeleteThread(id string) error {
 	_, err := s.db.Exec(`DELETE FROM threads WHERE id = ?`, id)
 	return err

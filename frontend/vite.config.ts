@@ -7,6 +7,16 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineConfig({
   plugins: [react(), tsconfigPaths(), tailwindcss()],
 
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8001',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, '/api'), // optional, adjust if needed
+      },
+    },
+  },
+
   define: {
     'import.meta.env.VITE_API_BASE_URL': JSON.stringify('http://localhost:8001'),
   },

@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { getSettings, updateSettings,  } from "@/api";
-import type { Settings } from '@/types.ts'
+import { getSettings, updateSettings } from "@/api";
+import type { Settings } from "@/types.ts";
+import { Button } from "@/components/ui/button";
 
-export const SettingsDialog: React.FC<{ onClose: () => void }> = ({ onClose }) => {
+export const SettingsDialog: React.FC<{ onClose: () => void }> = ({
+                                                                      onClose,
+                                                                  }) => {
     const [settings, setSettings] = useState<Settings | null>(null);
     const [saving, setSaving] = useState(false);
 
@@ -29,60 +32,94 @@ export const SettingsDialog: React.FC<{ onClose: () => void }> = ({ onClose }) =
         }
     };
 
-    if (!settings) return <div className="p-4">Loading...</div>;
+    const inputStyles =
+        "w-full rounded-md border bg-input p-2 text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-transparent";
 
     return (
-        <div className="p-4 bg-background text-foreground border rounded w-[400px]">
-            <h2 className="text-lg font-bold mb-2">Settings</h2>
-            <label className="flex items-center gap-2 mt-4">
-                <input
-                    type="checkbox"
-                    checked={settings.simulate_only}
-                    onChange={(e) => handleChange("simulate_only", e.target.checked )}
-                />
-                Simulate Only (no live LLM)
-            </label>
-            <label className="block mb-2">
-                LLM Provider
-                <input
-                    type="text"
-                    value={settings.llm_provider}
-                    onChange={(e) => handleChange("llm_provider", e.target.value)}
-                    className="w-full border p-1 mt-1"
-                />
-            </label>
-            <label className="block mb-2">
-                Model Name
-                <input
-                    type="text"
-                    value={settings.llm_model}
-                    onChange={(e) => handleChange("llm_model", e.target.value)}
-                    className="w-full border p-1 mt-1"
-                />
-            </label>
-            <label className="block mb-2">
-                Endpoint
-                <input
-                    type="text"
-                    value={settings.llm_endpoint}
-                    onChange={(e) => handleChange("llm_endpoint", e.target.value)}
-                    className="w-full border p-1 mt-1"
-                />
-            </label>
-            <label className="block mb-4">
-                API Key
-                <input
-                    type="password"
-                    value={settings.llm_api_key || ""}
-                    onChange={(e) => handleChange("llm_api_key", e.target.value)}
-                    className="w-full border p-1 mt-1"
-                />
-            </label>
-            <div className="flex justify-end gap-2">
-                <button onClick={onClose} disabled={saving} className="underline">Cancel</button>
-                <button onClick={handleSave} disabled={saving} className="bg-blue-500 text-white px-4 py-1 rounded">
-                    Save
-                </button>
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm"
+            onClick={onClose}
+        >
+            <div
+                className="p-8 bg-background text-foreground border rounded-lg shadow-xl w-[550px]"
+                onClick={(e) => e.stopPropagation()}
+            >
+                {!settings ? (
+                    <div className="p-4">Loading...</div>
+                ) : (
+                    <>
+                        <h2 className="text-xl font-bold mb-6">Settings</h2>
+                        <div className="space-y-4">
+                            <label className="flex items-center gap-3">
+                                <input
+                                    type="checkbox"
+                                    className="size-4 rounded accent-primary"
+                                    checked={settings.simulate_only}
+                                    onChange={(e) =>
+                                        handleChange("simulate_only", e.target.checked)
+                                    }
+                                />
+                                Simulate Only (no live LLM)
+                            </label>
+
+                            <label className="block space-y-1.5">
+                <span className="text-sm font-medium text-muted-foreground">
+                  LLM Provider
+                </span>
+                                <input
+                                    type="text"
+                                    value={settings.llm_provider}
+                                    onChange={(e) => handleChange("llm_provider", e.target.value)}
+                                    className={inputStyles}
+                                />
+                            </label>
+
+                            <label className="block space-y-1.5">
+                <span className="text-sm font-medium text-muted-foreground">
+                  Model Name
+                </span>
+                                <input
+                                    type="text"
+                                    value={settings.llm_model}
+                                    onChange={(e) => handleChange("llm_model", e.target.value)}
+                                    className={inputStyles}
+                                />
+                            </label>
+
+                            <label className="block space-y-1.5">
+                <span className="text-sm font-medium text-muted-foreground">
+                  Endpoint
+                </span>
+                                <input
+                                    type="text"
+                                    value={settings.llm_endpoint}
+                                    onChange={(e) => handleChange("llm_endpoint", e.target.value)}
+                                    className={inputStyles}
+                                />
+                            </label>
+
+                            <label className="block space-y-1.5">
+                <span className="text-sm font-medium text-muted-foreground">
+                  API Key
+                </span>
+                                <input
+                                    type="password"
+                                    value={settings.llm_api_key || ""}
+                                    onChange={(e) => handleChange("llm_api_key", e.target.value)}
+                                    className={inputStyles}
+                                />
+                            </label>
+                        </div>
+                        <div className="flex justify-end gap-4 mt-8">
+                            <Button variant="secondary" onClick={onClose} disabled={saving}>
+                                Cancel
+                            </Button>
+                            <Button size="lg" onClick={handleSave} disabled={saving}>
+                                {saving ? "Saving..." : "Save"}
+                            </Button>
+                        </div>
+                    </>
+                )}
             </div>
         </div>
     );

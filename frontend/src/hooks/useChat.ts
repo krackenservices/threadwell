@@ -6,6 +6,7 @@ import {
     createMessage,
     createThread,
     moveSubtree,
+    updateThread,
 } from '@/api';
 import { buildLLMHistory, callLLM } from '@/services/llm/llm';
 import { findDefaultParent } from "@/utils/tree"; // <-- Import the new function
@@ -139,6 +140,27 @@ export function useChat() {
         handleSetCurrentThreadId(newThreadId);
     };
 
+    const handleUpdateThreadTitle = async (threadId: string, title: string) => {
+        const originalThreads = [...threads];
+        const optimisticThread = {
+            ...originalThreads.find((t) => t.id === threadId)!,
+            title,
+        };
+
+        setThreads(prev =>
+            prev.map(t => (t.id === threadId ? optimisticThread : t))
+        );
+
+        try {
+            await updateThread(threadId, title);
+        } catch (error) {
+            console.error("Failed to update thread title:", error);
+            // Revert on failure
+            setThreads(originalThreads);
+            alert("Error: Could not save the new title.");
+        }
+    };
+
     return {
         threads,
         currentThreadId,
@@ -151,5 +173,6 @@ export function useChat() {
         handleClearThread: () => setActiveThreadId(null),
         handleMoveToChat,
         handleSetCurrentThreadId,
+        handleUpdateThreadTitle,
     };
 }

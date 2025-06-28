@@ -218,6 +218,19 @@ func (s *MemoryStorage) GetSettings() (*models.Settings, error) {
 	return s.settings, nil
 }
 
+func (m *MemoryStorage) UpdateThread(t models.Thread) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	// Check if thread exists
+	if _, ok := m.threads[t.ID]; !ok {
+		return errors.New("thread not found")
+	}
+
+	m.threads[t.ID] = t
+	return nil
+}
+
 func (s *MemoryStorage) UpdateSettings(cfg models.Settings) error {
 	s.settings = &cfg
 	return nil
