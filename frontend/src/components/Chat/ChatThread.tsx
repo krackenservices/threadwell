@@ -1,6 +1,6 @@
 import { buildMessageTree } from "@/utils/tree";
 import type { ChatMessage, ThreadedMessageNode } from "@/types";
-import ChatMessageBubble from "@/components/Chat/ChatMessage";
+import PairedMessageNode from "./PairedMessageNode";
 
 interface ChatThreadProps {
     messages: ChatMessage[];
@@ -11,44 +11,52 @@ interface ChatThreadProps {
 
 const ThreadNode: React.FC<{
     node: ThreadedMessageNode;
-    level?: number;
-    onReply: (id: string) => void;
-    activeThreadId: string | null;
     activePathIds: Set<string>;
+    onReply: (id: string) => void;
     onMoveToChat: (id: string) => void;
-}> = ({ node, level = 0, onReply, activeThreadId, activePathIds, onMoveToChat }) => {
-    return (
-        <div className="relative flex flex-col items-center mb-12 flex-shrink-0" >
-            {level > 0 && (
-                <div className="absolute -top-6 h-6 w-px bg-muted left-1/2 transform -translate-x-1/2 z-0" />
-            )}
+}> = ({ node, activePathIds, onReply, onMoveToChat }) => {
+    if (!node || !node.message) {
+        return null;
+    }
 
-            <div className="relative z-10 px-4 w-full max-w-[700px]">
-                <ChatMessageBubble
-                    message={node.message}
-                    onReply={() => onReply(node.message.id)}
-                    onMoveToChat={onMoveToChat}
-                    highlight={activePathIds.has(node.message.id)}
-                    isLeaf={node.children.length === 0}
+    if (node.message.role !== 'user') {
+        return null;
+    }
+
+    const assistantChildNode = node.children.find(
+        (child) => child.message.role === 'assistant'
+    );
+
+    const branchingChildren = assistantChildNode
+        ? assistantChildNode.children
+        : node.children.filter(child => child.message.role !== 'assistant');
+
+    return (
+        <li>
+            <div className="w-full max-w-md">
+                <PairedMessageNode
+                    userMessage={node.message}
+                    assistantMessage={assistantChildNode?.message}
+                    highlight={activePathIds.has(node.message.id) || (assistantChildNode && activePathIds.has(assistantChildNode.message.id))}
+                    onReply={assistantChildNode ? () => onReply(assistantChildNode.message.id) : undefined}
+                    onMoveToChat={() => onMoveToChat(node.message.id)}
                 />
             </div>
 
-            {node.children.length > 0 && (
-                <div className="mt-8 flex flex-row gap-6 flex-nowrap justify-start px-4">
-                    {node.children.map((child) => (
+            {branchingChildren.length > 0 && (
+                <ul>
+                    {branchingChildren.map((child) => (
                         <ThreadNode
                             key={child.message.id}
                             node={child}
-                            level={level + 1}
+                            activePathIds={activePathIds}
                             onReply={onReply}
                             onMoveToChat={onMoveToChat}
-                            activeThreadId={activeThreadId}
-                            activePathIds={activePathIds}
                         />
                     ))}
-                </div>
+                </ul>
             )}
-        </div>
+        </li>
     );
 };
 
@@ -56,6 +64,7 @@ const findAncestry = (
     node: ThreadedMessageNode,
     targetId: string
 ): string[] | null => {
+    if (!node || !node.message) return null;
     if (node.message.id === targetId) return [node.message.id];
     for (const child of node.children) {
         const path = findAncestry(child, targetId);
@@ -66,22 +75,21 @@ const findAncestry = (
 
 const ChatThreadView: React.FC<ChatThreadProps> = ({ messages, onReply, activeThreadId, onMoveToChat }) => {
     const tree = buildMessageTree(messages || []);
-
-
-    const activePathIds = tree.flatMap((node) => findAncestry(node, activeThreadId ?? "") ?? []);
+    const activePathIds = new Set(tree.flatMap((node) => findAncestry(node, activeThreadId ?? "") ?? []));
 
     return (
-        <div className="p-10 inline-block min-w-full">
-            {tree.map((node) => (
-                <ThreadNode
-                    key={node.message.id}
-                    node={node}
-                    onReply={onReply}
-                    onMoveToChat={onMoveToChat}
-                    activeThreadId={activeThreadId}
-                    activePathIds={new Set(activePathIds)}
-                />
-            ))}
+        <div className="p-10 text-center whitespace-nowrap overflow-x-auto">
+            <ul className="chat-tree">
+                {tree.map((node, index) => (
+                    <ThreadNode
+                        key={node?.message?.id || index}
+                        node={node}
+                        onReply={onReply}
+                        onMoveToChat={onMoveToChat}
+                        activePathIds={activePathIds}
+                    />
+                ))}
+            </ul>
         </div>
     );
 };

@@ -125,3 +125,87 @@
 .activeThread {
   @apply bg-[#336699]/8;
 }
+
+.chat-tree,
+.chat-tree ul,
+.chat-tree li {
+  position: relative;
+}
+
+.chat-tree {
+  display: inline-block;
+  text-align: center;
+}
+.chat-tree ul {
+  display: flex;
+  padding-top: 2rem; /* Space for the lines */
+}
+
+.chat-tree li {
+  flex: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+/* Vertical line coming down from a node's children list (ul) */
+.chat-tree ul::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 2px;
+  height: 2rem;
+  background: var(--color-border);
+}
+
+/* Horizontal line connecting siblings. Drawn by each list item. */
+.chat-tree li::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: var(--color-border);
+}
+
+/* Vertical line going up from each list item. */
+.chat-tree li::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 2px;
+  height: 2rem;
+  background: var(--color-border);
+}
+
+/* --- Edge cases --- */
+
+/* The root of the tree should not have lines pointing up. */
+.chat-tree > li::before,
+.chat-tree > li::after {
+  display: none;
+}
+
+/* For the first child, the horizontal line should start from its center. */
+.chat-tree li:first-child::after {
+  left: 50%;
+  width: 50%;
+}
+
+/* For the last child, the horizontal line should end at its center. */
+.chat-tree li:last-child::after {
+  right: 50%;
+  width: 50%;
+}
+
+/* A node that is the only child does not need a horizontal line at all. */
+.chat-tree li:only-child::after {
+  display: none;
+}
