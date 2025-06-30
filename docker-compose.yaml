@@ -16,7 +16,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    env:
+    environment:
       - VITE_API_BASE_URL=host.docker.internal:8001
     ports:
       - "8080:80"
