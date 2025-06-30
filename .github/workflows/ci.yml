@@ -13,8 +13,9 @@ jobs:
     outputs:
       push: ${{ steps.vars.outputs.push }}
       tag: ${{ steps.vars.outputs.tag }}
-      frontend: ${{ steps.vars.outputs.frontend }}
-      backend: ${{ steps.vars.outputs.backend }}
+      frontend: ${{ steps.vars.outputs.frontendComponents }}
+      backend: ${{ steps.vars.outputs.backendComponents }}
+      github: ${{ steps.vars.outputs.githubComponents }}
 
     steps:
       - name: Git checkout
@@ -49,7 +50,7 @@ jobs:
   test:
     needs: setvars
     runs-on: ubuntu-latest
-    if: ${{ needs.setvars.outputs.backendComponents != 0 || inputs.githubComponents != 0 || startsWith(github.ref, 'refs/tags/') }}
+    if: ${{ needs.setvars.outputs.backend != 0 || inputs.github != 0 || startsWith(github.ref, 'refs/tags/') }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
