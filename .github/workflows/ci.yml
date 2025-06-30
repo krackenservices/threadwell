@@ -44,6 +44,7 @@ jobs:
             if [[ "${i:0:1}" == "."  ]]; then i=${i:1}; fi
             echo "${i}Components=${count}" >> $GITHUB_OUTPUT
           done;
+          echo $GITHUB_OUTPUT
 
   test:
     needs: setvars
