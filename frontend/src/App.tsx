@@ -7,6 +7,7 @@ import MessageInput from "@/components/Chat/MessageInput";
 import { SettingsDialog } from "@/components/Chat/SettingsDialog";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import EditableTitle from "@/components/Chat/EditableTitle";
 
 const App: React.FC = () => {
     const {
@@ -21,15 +22,16 @@ const App: React.FC = () => {
         handleClearThread,
         handleMoveToChat,
         handleSetCurrentThreadId,
+        handleUpdateThreadTitle,
     } = useChat();
 
-    // UI-specific state, like the visibility of a dialog, can remain in the component.
     const [showSettings, setShowSettings] = useState(false);
+    const currentThread = threads.find((t) => t.id === currentThreadId);
 
     return (
-        <div className="flex h-screen bg-background text-foreground">
+        <div className="flex h-screen bg-background dark:bg-background text-foreground">
             {/* --- Sidebar UI --- */}
-            <aside className="w-72 flex flex-col bg-sidebar text-sidebar-foreground p-4">
+            <aside className="w-40 flex flex-col flex-shrink-0 bg-sidebar text-sidebar-foreground p-4">
                 <div className="flex-1 overflow-y-auto">
                     <div className="p-2">
                         <Button
@@ -76,17 +78,29 @@ const App: React.FC = () => {
                         Settings
                     </Button>
                 </div>
-
-                {showSettings && <SettingsDialog onClose={() => setShowSettings(false)} />}
             </aside>
 
 
             {/* --- Main Content UI --- */}
-            <main className="flex flex-col flex-1">
-                {currentThreadId ? (
+            <main className="flex flex-col flex-1 overflow-hidden bg-background">
+                {currentThreadId && currentThread ? (
                     <>
-                        <div className="flex-1 overflow-auto bg-neutral-950">
-                            <div className="min-w-full min-h-full flex justify-center items-start">
+                        <header className="p-4 border-b flex-shrink-0">
+                            <EditableTitle
+                                initialTitle={
+                                    currentThread.title === "New Thread"
+                                        ? `Chat ${currentThread.id.slice(4, 8)}`
+                                        : currentThread.title
+                                }
+                                onSave={(newTitle) => {
+                                    if (currentThreadId) {
+                                        handleUpdateThreadTitle(currentThreadId, newTitle);
+                                    }
+                                }}
+                            />
+                        </header>
+                        <div className="flex-1 overflow-auto">
+                            <div className="min-w-full min-h-full flex justify-start items-start">
                                 <div className="p-10 inline-flex">
                                     {isLoading && messages.length === 0 ? (
                                         <p>Loading chat...</p>
@@ -117,6 +131,8 @@ const App: React.FC = () => {
                     </div>
                 )}
             </main>
+
+            {showSettings && <SettingsDialog onClose={() => setShowSettings(false)} />}
         </div>
     );
 };

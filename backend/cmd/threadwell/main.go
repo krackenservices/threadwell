@@ -14,26 +14,13 @@ import (
 	"github.com/krackenservices/threadwell/storage"
 	"github.com/krackenservices/threadwell/storage/memory"
 	"github.com/krackenservices/threadwell/storage/sqlite"
+	"github.com/rs/cors" // Import the new library
 	"github.com/swaggo/http-swagger"
 )
 
 var store storage.Storage
 
-func withCORS(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*") // or your frontend origin
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-
-		// Handle preflight
-		if r.Method == http.MethodOptions {
-			w.WriteHeader(http.StatusOK)
-			return
-		}
-
-		next.ServeHTTP(w, r)
-	})
-}
+// The manual withCORS function is no longer needed and has been removed.
 
 func main() {
 	cfg := config.Load()
@@ -60,8 +47,20 @@ func main() {
 		http.ServeFile(w, r, "./docs/swagger.json")
 	})
 
+	// Configure CORS using the library
+	c := cors.New(cors.Options{
+		AllowedOrigins:   []string{"*"}, // For development. For production, you'd list your frontend's domain.
+		AllowedMethods:   []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete, http.MethodOptions},
+		AllowedHeaders:   []string{"Content-Type", "Authorization"},
+		AllowCredentials: true,
+	})
+
+	// Wrap your router with the CORS handler
+	handler := c.Handler(mux)
+
 	log.Println("Listening on :8001")
-	if err := http.ListenAndServe(":8001", withCORS(mux)); err != nil {
+	// Use the new CORS-wrapped handler
+	if err := http.ListenAndServe(":8001", handler); err != nil {
 		log.Fatal(err)
 	}
 }

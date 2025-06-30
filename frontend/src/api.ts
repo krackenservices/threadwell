@@ -12,6 +12,13 @@ export const createThread = () =>
         body: JSON.stringify({ title: "New Thread" }),
     });
 
+export const updateThread = (id: string, title: string) =>
+    fetchJson<ChatThread>(`/api/threads/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title }),
+    });
+
 export const deleteThread = (id: string) =>
     fetchJson<void>(`/api/threads/${id}`, { method: "DELETE" });
 

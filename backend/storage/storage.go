@@ -9,6 +9,7 @@ type Storage interface {
 	ListThreads() ([]models.Thread, error)
 	GetThread(id string) (*models.Thread, error)
 	CreateThread(t models.Thread) error
+	UpdateThread(t models.Thread) error
 	DeleteThread(id string) error
 
 	// Messages
