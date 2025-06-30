@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite'
+import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import tsconfigPaths from 'vite-tsconfig-paths'
 import tailwindcss from '@tailwindcss/vite'
@@ -19,5 +19,11 @@ export default defineConfig({
 
   define: {
     'import.meta.env.VITE_API_BASE_URL': JSON.stringify('http://localhost:8001'),
+  },
+
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: './src/vitest.config.js',
   },
 })
