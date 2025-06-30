@@ -5,9 +5,7 @@ on:
     branches: [master]
   pull_request:
 
-
 jobs:
-
   setvars:
     runs-on: ubuntu-latest
     outputs:
@@ -47,10 +45,10 @@ jobs:
             echo "${i}Components=${count}" >> $GITHUB_OUTPUT
           done;
 
-  test:
+  test-backend:
     needs: setvars
     runs-on: ubuntu-latest
-    if: ${{ needs.setvars.outputs.backend != 0 || inputs.github != 0 || startsWith(github.ref, 'refs/tags/') }}
+    if: ${{ needs.setvars.outputs.backend != 0 || needs.setvars.outputs.github != 0 || startsWith(github.ref, 'refs/tags/') }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -67,10 +65,33 @@ jobs:
         run: make test
         working-directory: backend
 
+  test-frontend:
+    runs-on: ubuntu-latest
+    needs: setvars
+    if: ${{ needs.setvars.outputs.backend != 0 || needs.setvars.outputs.github != 0 || startsWith(github.ref, 'refs/tags/') }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+        working-directory: frontend
+      - name: Install Node types
+        run: npm install --no-save @types/node
+        working-directory: frontend
+      - name: Test frontend
+        run: npm run test
+        working-directory: frontend
+
   build-backend:
     runs-on: ubuntu-latest
-    needs: [setvars, test]
-    if: ${{ needs.setvars.outputs.backend != 0 || inputs.github != 0 || startsWith(github.ref, 'refs/tags/') }}
+    needs: [setvars, test-backend]
+    if: ${{ needs.setvars.outputs.backend != 0 || needs.setvars.outputs.github != 0 || startsWith(github.ref, 'refs/tags/') }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -87,8 +108,8 @@ jobs:
 
   build-frontend:
     runs-on: ubuntu-latest
-    needs: [setvars, test]
-    if: ${{ needs.setvars.outputs.frontend != 0 || inputs.github != 0 || startsWith(github.ref, 'refs/tags/') }}
+    needs: [setvars, test-frontend]
+    if: ${{ needs.setvars.outputs.frontend != 0 || needs.setvars.outputs.github != 0 || startsWith(github.ref, 'refs/tags/') }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
