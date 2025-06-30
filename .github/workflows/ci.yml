@@ -70,7 +70,7 @@ jobs:
           done
 
 
-test:
+  test:
     needs: setvars
     runs-on: ubuntu-latest
     if: ${{ needs.setvars.outputs.backendComponents != 0 || inputs.githubComponents != 0 || startsWith(github.ref, 'refs/tags/') }}
