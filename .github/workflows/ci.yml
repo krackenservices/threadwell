@@ -6,8 +6,49 @@ on:
   pull_request:
 
 jobs:
-  test:
+  setvars:
     runs-on: ubuntu-latest
+    outputs:
+      push: ${{ steps.vars.outputs.push }}
+      tag: ${{ steps.vars.outputs.tag }}
+      frontend: ${{ steps.vars.outputs.frontendComponents }}
+      backend: ${{ steps.vars.outputs.backendComponents }}
+      github: ${{ steps.vars.outputs.githubComponents }}
+
+    steps:
+      - name: Git checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: '0'
+      - name: Set release vars
+        id: vars
+        run: |
+          if [[ "${{ github.ref }}" == 'refs/tags/'* ]]; then
+            echo "tag=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+            echo "push=true" >> $GITHUB_OUTPUT
+          else
+            echo "tag=dev" >> $GITHUB_OUTPUT
+            echo "push=false" >> $GITHUB_OUTPUT
+          fi
+          
+          TRIGGER_DIRS=(
+          ".github"
+          "frontend"
+          "backend"
+          )
+          for i in "${TRIGGER_DIRS[@]}"; do
+            count=$(git diff --name-only $(git describe --tags --abbrev=0) HEAD -- ${i} | cut -d/ -f1 | grep -v ' ' | sort | uniq | wc -l)
+            # Ensure that the count is a proper integer
+            if [[ -z "$count" ]]; then count=0; fi
+            if [[ "${i:0:1}" == "."  ]]; then i=${i:1}; fi
+            echo "${i}Components=${count}"
+            echo "${i}Components=${count}" >> $GITHUB_OUTPUT
+          done;
+
+  test-backend:
+    needs: setvars
+    runs-on: ubuntu-latest
+    if: ${{ needs.setvars.outputs.backend != 0 || needs.setvars.outputs.github != 0 || startsWith(github.ref, 'refs/tags/') }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -24,9 +65,33 @@ jobs:
         run: make test
         working-directory: backend
 
+  test-frontend:
+    runs-on: ubuntu-latest
+    needs: setvars
+    if: ${{ needs.setvars.outputs.backend != 0 || needs.setvars.outputs.github != 0 || startsWith(github.ref, 'refs/tags/') }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+        working-directory: frontend
+      - name: Install Node types
+        run: npm install --no-save @types/node
+        working-directory: frontend
+      - name: Test frontend
+        run: npm run test
+        working-directory: frontend
+
   build-backend:
     runs-on: ubuntu-latest
-    needs: test
+    needs: [setvars, test-backend]
+    if: ${{ needs.setvars.outputs.backend != 0 || needs.setvars.outputs.github != 0 || startsWith(github.ref, 'refs/tags/') }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -43,7 +108,8 @@ jobs:
 
   build-frontend:
     runs-on: ubuntu-latest
-    needs: test
+    needs: [setvars, test-frontend]
+    if: ${{ needs.setvars.outputs.frontend != 0 || needs.setvars.outputs.github != 0 || startsWith(github.ref, 'refs/tags/') }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
