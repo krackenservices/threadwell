@@ -38,9 +38,9 @@ Backend: (requires GO)
 - Open a terminal
 - `cd backend && STORAGE=memory go run cmd/threadwell/main.go`
 
-Frontend: (requires Nodes) 
+Frontend: (requires Nodes)
 - Open a terminal
-- `cd frontend && npm ci && node run dev`
+- `cd frontend && npm ci && npm run dev`
 
 
 ---

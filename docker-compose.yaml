@@ -17,7 +17,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     environment:
-      - VITE_API_BASE_URL=host.docker.internal:8001
+      - VITE_API_BASE_URL=http://host.docker.internal:8001
     ports:
       - "8080:80"
     restart: unless-stopped
