@@ -1,0 +1,64 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+      - name: Install golangci-lint
+        run: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+      - name: Generate swagger docs
+        run: make swagger
+        working-directory: backend
+      - name: Run backend tests
+        run: make test
+        working-directory: backend
+
+  build-backend:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+      - name: Generate swagger docs
+        run: make swagger
+        working-directory: backend
+      - name: Build backend
+        run: make build
+        working-directory: backend
+
+  build-frontend:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+        working-directory: frontend
+      - name: Install Node types
+        run: npm install --no-save @types/node
+        working-directory: frontend
+      - name: Build frontend
+        run: npm run build
+        working-directory: frontend
