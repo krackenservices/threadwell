@@ -16,10 +16,9 @@ import (
 )
 
 func newTestServer() *httptest.Server {
-	mux := http.NewServeMux()
 	store := memory.New()
-	api.RegisterRoutes(mux, store)
-	return httptest.NewServer(mux)
+	handler := api.RegisterRoutes(store)
+	return httptest.NewServer(handler)
 }
 
 func TestEmptyCollectionsReturnEmptyArray(t *testing.T) {

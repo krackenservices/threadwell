@@ -18,14 +18,15 @@ import (
 	"github.com/swaggo/http-swagger"
 )
 
-var store storage.Storage
-
 // The manual withCORS function is no longer needed and has been removed.
 
 func main() {
 	cfg := config.Load()
 
-	var err error
+	var (
+		store storage.Storage
+		err   error
+	)
 	switch cfg.Storage.Type {
 	case "sqlite":
 		store, err = sqlite.New(cfg.Storage.Path)
@@ -39,17 +40,17 @@ func main() {
 		log.Fatalf("storage init error: %v", err)
 	}
 
+	apiHandler := api.RegisterRoutes(store)
 	mux := http.NewServeMux()
-	api.RegisterRoutes(mux, store)
-
 	mux.Handle("/swagger/", httpSwagger.WrapHandler)
 	mux.HandleFunc("/swagger.json", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "./docs/swagger.json")
 	})
+	mux.Handle("/", apiHandler)
 
 	// Configure CORS using the library
 	c := cors.New(cors.Options{
-		AllowedOrigins:   []string{"*"}, // For development. For production, you'd list your frontend's domain.
+		AllowedOrigins:   []string{"*"},
 		AllowedMethods:   []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete, http.MethodOptions},
 		AllowedHeaders:   []string{"Content-Type", "Authorization"},
 		AllowCredentials: true,
@@ -59,7 +60,6 @@ func main() {
 	handler := c.Handler(mux)
 
 	log.Println("Listening on :8001")
-	// Use the new CORS-wrapped handler
 	if err := http.ListenAndServe(":8001", handler); err != nil {
 		log.Fatal(err)
 	}

@@ -8,19 +8,29 @@ import (
 	"github.com/krackenservices/threadwell/storage"
 )
 
-var backend storage.Storage
+// Handler bundles the HTTP mux and storage implementation.
+type Handler struct {
+	mux     *http.ServeMux
+	backend storage.Storage
+}
 
-// RegisterRoutes registers API handlers
-func RegisterRoutes(mux *http.ServeMux, s storage.Storage) {
-	backend = s
-	mux.HandleFunc("/api/threads", threadsHandler)
-	mux.HandleFunc("/api/threads/", threadIDHandler) // Changed from threadDeleteHandler
-	mux.HandleFunc("/api/messages", messagesHandler)
-	mux.HandleFunc("/api/messages/", messageIDHandler)
-	mux.HandleFunc("/api/move/", moveHandler)
-	mux.HandleFunc("/health", healthHandler)
-	mux.HandleFunc("/version", versionHandler)
-	mux.HandleFunc("/api/settings", settingsHandler)
+// ServeHTTP satisfies http.Handler by delegating to the internal mux.
+func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	h.mux.ServeHTTP(w, r)
+}
+
+// RegisterRoutes builds and returns an http.Handler for the API.
+func RegisterRoutes(s storage.Storage) http.Handler {
+	h := &Handler{backend: s, mux: http.NewServeMux()}
+	h.mux.HandleFunc("/api/threads", h.threadsHandler)
+	h.mux.HandleFunc("/api/threads/", h.threadIDHandler)
+	h.mux.HandleFunc("/api/messages", h.messagesHandler)
+	h.mux.HandleFunc("/api/messages/", h.messageIDHandler)
+	h.mux.HandleFunc("/api/move/", h.moveHandler)
+	h.mux.HandleFunc("/health", healthHandler)
+	h.mux.HandleFunc("/version", versionHandler)
+	h.mux.HandleFunc("/api/settings", h.settingsHandler)
+	return h
 }
 
 // healthHandler provides a simple liveness check
@@ -60,9 +70,9 @@ func versionHandler(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {array} models.Thread
 // @Failure 500 {object} map[string]string
 // @Router /api/threads [get]
-func threadsHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) threadsHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
-		threads, err := backend.ListThreads()
+		threads, err := h.backend.ListThreads()
 		if err != nil {
 			http.Error(w, `{"error":"failed to fetch threads"}`, http.StatusInternalServerError)
 			return
@@ -88,7 +98,7 @@ func threadsHandler(w http.ResponseWriter, r *http.Request) {
 		if t.CreatedAt == 0 {
 			t.CreatedAt = UnixNow()
 		}
-		if err := backend.CreateThread(t); err != nil {
+		if err := h.backend.CreateThread(t); err != nil {
 			http.Error(w, `{"error":"failed to save thread"}`, http.StatusInternalServerError)
 			return
 		}
@@ -113,14 +123,14 @@ func threadsHandler(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {array} models.Message
 // @Failure 500 {object} map[string]string
 // @Router /api/messages [get]
-func messagesHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) messagesHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
 		threadID := r.URL.Query().Get("threadId")
 		if threadID == "" {
 			http.Error(w, `{"error":"threadId is required"}`, http.StatusBadRequest)
 			return
 		}
-		msgs, err := backend.ListMessages(threadID)
+		msgs, err := h.backend.ListMessages(threadID)
 		if err != nil {
 			http.Error(w, `{"error":"failed to fetch messages"}`, http.StatusInternalServerError)
 			return
@@ -146,7 +156,7 @@ func messagesHandler(w http.ResponseWriter, r *http.Request) {
 		if m.Timestamp == 0 {
 			m.Timestamp = UnixNow()
 		}
-		if err := backend.CreateMessage(m); err != nil {
+		if err := h.backend.CreateMessage(m); err != nil {
 			http.Error(w, `{"error":"failed to save message"}`, http.StatusInternalServerError)
 			return
 		}
@@ -172,7 +182,7 @@ func messagesHandler(w http.ResponseWriter, r *http.Request) {
 // @Failure 400 {object} map[string]string
 // @Failure 500 {object} map[string]string
 // @Router /api/move/{id} [post]
-func moveHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) moveHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
@@ -185,7 +195,7 @@ func moveHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newThreadID, err := backend.MoveSubtree(id)
+	newThreadID, err := h.backend.MoveSubtree(id)
 	if err != nil {
 		http.Error(w, `{"error":"`+err.Error()+`"}`, http.StatusInternalServerError)
 		return
@@ -214,7 +224,7 @@ type updateThreadPayload struct {
 // @Failure 500 {object} map[string]string
 // @Router /api/threads/{id} [patch]
 // @Router /api/threads/{id} [delete]
-func threadIDHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) threadIDHandler(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Path[len("/api/threads/"):]
 	if id == "" {
 		WriteError(w, http.StatusBadRequest, "thread ID is required")
@@ -230,7 +240,7 @@ func threadIDHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// NOTE: You will need to implement GetThread and UpdateThread in your storage layer
-		thread, err := backend.GetThread(id)
+		thread, err := h.backend.GetThread(id)
 		if err != nil {
 			WriteError(w, http.StatusNotFound, "thread not found")
 			return
@@ -238,7 +248,7 @@ func threadIDHandler(w http.ResponseWriter, r *http.Request) {
 
 		thread.Title = payload.Title
 
-		if err := backend.UpdateThread(*thread); err != nil {
+		if err := h.backend.UpdateThread(*thread); err != nil {
 			WriteError(w, http.StatusInternalServerError, "failed to update thread")
 			return
 		}
@@ -246,7 +256,7 @@ func threadIDHandler(w http.ResponseWriter, r *http.Request) {
 		WriteJSON(w, http.StatusOK, thread)
 
 	case http.MethodDelete:
-		if err := backend.DeleteThread(id); err != nil {
+		if err := h.backend.DeleteThread(id); err != nil {
 			WriteError(w, http.StatusInternalServerError, "failed to delete thread")
 			return
 		}
@@ -269,7 +279,7 @@ func threadIDHandler(w http.ResponseWriter, r *http.Request) {
 // @Router /api/messages/{id} [get]
 // @Router /api/messages/{id} [put]
 // @Router /api/messages/{id} [delete]
-func messageIDHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) messageIDHandler(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Path[len("/api/messages/"):]
 	if id == "" {
 		http.Error(w, `{"error":"id required"}`, http.StatusBadRequest)
@@ -278,7 +288,7 @@ func messageIDHandler(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case http.MethodGet:
-		msg, err := backend.GetMessage(id)
+		msg, err := h.backend.GetMessage(id)
 		if err != nil {
 			http.Error(w, `{"error":"`+err.Error()+`"}`, http.StatusInternalServerError)
 			return
@@ -301,11 +311,11 @@ func messageIDHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		m.ID = id
-		if err := backend.DeleteMessage(id); err != nil {
+		if err := h.backend.DeleteMessage(id); err != nil {
 			http.Error(w, `{"error":"could not delete old message"}`, http.StatusInternalServerError)
 			return
 		}
-		if err := backend.CreateMessage(m); err != nil {
+		if err := h.backend.CreateMessage(m); err != nil {
 			http.Error(w, `{"error":"failed to update message"}`, http.StatusInternalServerError)
 			return
 		}
@@ -317,7 +327,7 @@ func messageIDHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 	case http.MethodDelete:
-		if err := backend.DeleteMessage(id); err != nil {
+		if err := h.backend.DeleteMessage(id); err != nil {
 			http.Error(w, `{"error":"failed to delete"}`, http.StatusInternalServerError)
 			return
 		}
@@ -341,10 +351,10 @@ func messageIDHandler(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {object} models.Settings
 // @Router /api/settings [get]
 // @Router /api/settings [put]
-func settingsHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) settingsHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
-		cfg, err := backend.GetSettings()
+		cfg, err := h.backend.GetSettings()
 		if err != nil {
 			WriteError(w, http.StatusInternalServerError, "Failed to load settings")
 			return
@@ -360,7 +370,7 @@ func settingsHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		cfg.ID = "default" // force ID for upsert
-		if err := backend.UpdateSettings(cfg); err != nil {
+		if err := h.backend.UpdateSettings(cfg); err != nil {
 			WriteError(w, http.StatusInternalServerError, "Failed to update settings")
 			return
 		}
