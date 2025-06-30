@@ -27,32 +27,7 @@ jobs:
           if [[ "${{ github.ref }}" == 'refs/tags/'* ]]; then
             echo "tag=${{ github.ref_name }}" >> $GITHUB_OUTPUT
             echo "push=true" >> $GITHUB_OUTPUT
-            BASE_REF="${{ github.ref_name }}"
           else
-            # Custom logic for fallback tag/base
-            # Find last tag
-            last_tag=$(git describe --tags --abbrev=0 2>/dev/null)
-          
-            # Find branch name
-            branch=$(git symbolic-ref --short HEAD 2>/dev/null)
-          
-            if [ -n "$last_tag" ]; then
-              BASE_REF="$last_tag"
-            elif [ "$branch" != "main" ] && [ "$branch" != "master" ]; then
-              # Not on main/master: use HEAD of main or master
-            if git show-ref --verify --quiet refs/heads/main; then
-              BASE_REF=$(git rev-parse refs/heads/main)
-            elif git show-ref --verify --quiet refs/heads/master; then
-              BASE_REF=$(git rev-parse refs/heads/master)
-            else
-              echo "No main or master branch found." >&2
-              exit 1
-            fi
-            else
-              # On main/master and no tags: use first commit
-              BASE_REF=$(git rev-list --max-parents=0 HEAD)
-            fi
-          
             echo "tag=dev" >> $GITHUB_OUTPUT
             echo "push=false" >> $GITHUB_OUTPUT
           fi
@@ -63,14 +38,14 @@ jobs:
           "backend"
           )
           for i in "${TRIGGER_DIRS[@]}"; do
-          count=$(git diff --name-only "$BASE_REF" HEAD -- ${i} | cut -d/ -f1 | grep -v ' ' | sort | uniq | wc -l)
-          if [[ -z "$count" ]]; then count=0; fi
-          if [[ "${i:0:1}" == "."  ]]; then i=${i:1}; fi
-          echo "${i}Components=${count}" >> $GITHUB_OUTPUT
-          done
+            count=$(git diff --name-only $(git describe --tags --abbrev=0) HEAD -- ${i} | cut -d/ -f1 | grep -v ' ' | sort | uniq | wc -l)
+            # Ensure that the count is a proper integer
+            if [[ -z "$count" ]]; then count=0; fi
+            if [[ "${i:0:1}" == "."  ]]; then i=${i:1}; fi
+            echo "${i}Components=${count}" >> $GITHUB_OUTPUT
+          done;
 
-
-  test:
+test:
     needs: setvars
     runs-on: ubuntu-latest
     if: ${{ needs.setvars.outputs.backendComponents != 0 || inputs.githubComponents != 0 || startsWith(github.ref, 'refs/tags/') }}
