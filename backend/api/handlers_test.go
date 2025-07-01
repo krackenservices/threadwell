@@ -265,3 +265,29 @@ func TestMoveSubtree(t *testing.T) {
 		t.Errorf("expected thread_id in response")
 	}
 }
+
+func TestThreadPatch(t *testing.T) {
+	srv := newTestServer()
+	defer srv.Close()
+
+	// create thread
+	threadBody := `{"title":"before"}`
+	res, err := http.Post(srv.URL+"/api/threads", "application/json", bytes.NewBufferString(threadBody))
+	require.NoError(t, err)
+	var tCreated models.Thread
+	require.NoError(t, json.NewDecoder(res.Body).Decode(&tCreated))
+	res.Body.Close()
+
+	// patch title
+	patchBody := `{"title":"after"}`
+	req, _ := http.NewRequest(http.MethodPatch, srv.URL+"/api/threads/"+tCreated.ID, strings.NewReader(patchBody))
+	req.Header.Set("Content-Type", "application/json")
+	res, err = http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	require.Equal(t, http.StatusOK, res.StatusCode)
+
+	var updated models.Thread
+	require.NoError(t, json.NewDecoder(res.Body).Decode(&updated))
+	res.Body.Close()
+	require.Equal(t, "after", updated.Title)
+}
