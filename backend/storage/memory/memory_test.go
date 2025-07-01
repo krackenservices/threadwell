@@ -12,4 +12,5 @@ func TestMemoryStorage(t *testing.T) {
 	testhelpers.RunStorageSuite(t, "memory", store)
 	testhelpers.RunMoveSubtreeSuite(t, "memory", store)
 	testhelpers.RunSettingsSuite(t, "memory", store)
+	testhelpers.RunUsersSuite(t, "memory", store)
 }

@@ -24,4 +24,11 @@ type Storage interface {
 	// Settings
 	GetSettings() (*models.Settings, error)
 	UpdateSettings(models.Settings) error
+
+	// Users
+	ListUsers() ([]models.User, error)
+	GetUser(id string) (*models.User, error)
+	CreateUser(models.User) error
+	UpdateUser(models.User) error
+	DeleteUser(id string) error
 }
