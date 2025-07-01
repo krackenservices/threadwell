@@ -239,7 +239,6 @@ func (h *Handler) threadIDHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// NOTE: You will need to implement GetThread and UpdateThread in your storage layer
 		thread, err := h.backend.GetThread(id)
 		if err != nil {
 			WriteError(w, http.StatusNotFound, "thread not found")
