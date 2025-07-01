@@ -40,6 +40,12 @@ func (s *SQLiteStorage) Init() error {
     FOREIGN KEY(parent_id) REFERENCES messages(id),
     FOREIGN KEY(root_id) REFERENCES messages(id)
 );
+    CREATE TABLE IF NOT EXISTS users (
+        id TEXT PRIMARY KEY,
+        username TEXT,
+        password_hash TEXT,
+        role TEXT
+    );
 `)
 	return err
 }

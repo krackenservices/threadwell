@@ -214,3 +214,34 @@ func RunSettingsSuite(t *testing.T, name string, s storage.Storage) {
 		require.Equal(t, input, *out)
 	})
 }
+
+// RunUsersSuite tests user CRUD operations.
+func RunUsersSuite(t *testing.T, name string, s storage.Storage) {
+	t.Run(name+"/Users_CRUD", func(t *testing.T) {
+		require.NoError(t, s.Init())
+
+		user := models.User{ID: uuid.NewString(), Username: "bob", PasswordHash: "hash", Role: "user"}
+		require.NoError(t, s.CreateUser(user))
+
+		got, err := s.GetUser(user.ID)
+		require.NoError(t, err)
+		require.Equal(t, user.Username, got.Username)
+
+		users, err := s.ListUsers()
+		require.NoError(t, err)
+		require.NotEmpty(t, users)
+
+		user.Username = "alice"
+		require.NoError(t, s.UpdateUser(user))
+
+		got, err = s.GetUser(user.ID)
+		require.NoError(t, err)
+		require.Equal(t, "alice", got.Username)
+
+		require.NoError(t, s.DeleteUser(user.ID))
+
+		got, err = s.GetUser(user.ID)
+		require.NoError(t, err)
+		require.Nil(t, got)
+	})
+}
