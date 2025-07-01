@@ -36,9 +36,10 @@ Modern chat interactions—especially with LLMs—often diverge from the origina
 
 Backend: (requires GO)
 - Open a terminal
-- `cd backend && STORAGE=memory go run cmd/threadwell/main.go`
+- `cd backend && STORAGE_TYPE=memory go run cmd/threadwell/main.go`
+- STORAGE_PATH is only required for non-memory storage
 
-Frontend: (requires Nodes)
+Frontend: (requires Node)
 - Open a terminal
 - `cd frontend && npm ci && npm run dev`
 
