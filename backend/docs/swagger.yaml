@@ -1,0 +1,358 @@
+basePath: /api
+definitions:
+  models.Message:
+    properties:
+      content:
+        type: string
+      id:
+        type: string
+      parent_id:
+        type: string
+      role:
+        type: string
+      root_id:
+        type: string
+      thread_id:
+        type: string
+      timestamp:
+        type: integer
+    type: object
+  models.Settings:
+    properties:
+      id:
+        description: always "default"
+        type: string
+      llm_api_key:
+        description: (optional, not returned on GET)
+        type: string
+      llm_endpoint:
+        description: http://localhost:11434 etc.
+        type: string
+      llm_model:
+        description: name of model to use e.g. qwen2.1
+        type: string
+      llm_provider:
+        description: e.g. "ollama", "openai", "claude"
+        type: string
+      simulate_only:
+        description: true = disable real calls
+        type: boolean
+    type: object
+  models.Thread:
+    properties:
+      created_at:
+        type: integer
+      id:
+        type: string
+      title:
+        type: string
+    type: object
+info:
+  contact: {}
+  description: Local threaded conversation backend
+  title: ThreadWell API
+  version: "0.1"
+paths:
+  /api/messages:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: Thread ID to filter messages
+        in: query
+        name: threadId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Message'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: List or create messages
+      tags:
+      - messages
+  /api/messages/{id}:
+    delete:
+      consumes:
+      - application/json
+      parameters:
+      - description: Message ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Message'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get, update or delete a message by ID
+      tags:
+      - messages
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: Message ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Message'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get, update or delete a message by ID
+      tags:
+      - messages
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Message ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Message'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get, update or delete a message by ID
+      tags:
+      - messages
+  /api/move/{id}:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Message ID to move
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Move a message and its descendants to a new thread
+      tags:
+      - messages
+  /api/settings:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: Updated settings
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.Settings'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Settings'
+      summary: Get or Update settings
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Updated settings
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.Settings'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Settings'
+      summary: Get or Update settings
+  /api/threads:
+    get:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Thread'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: List or create threads
+      tags:
+      - threads
+  /api/threads/{id}:
+    delete:
+      consumes:
+      - application/json
+      parameters:
+      - description: Thread ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Thread'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update or delete a thread
+      tags:
+      - threads
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Thread ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Thread'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update or delete a thread
+      tags:
+      - threads
+  /health:
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Health check
+      tags:
+      - meta
+  /version:
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: API version info
+      tags:
+      - meta
+swagger: "2.0"
