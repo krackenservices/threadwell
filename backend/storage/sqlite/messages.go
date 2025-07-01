@@ -86,7 +86,12 @@ func (s *SQLiteStorage) MoveSubtree(fromID string) (string, error) {
 		rootNewID = idMap[ancestry[0].ID]
 	}
 
-	// Step 6: Create new thread
+	// Step 6: Begin transaction and create new thread
+	tx, err := s.db.Begin()
+	if err != nil {
+		return "", err
+	}
+
 	title := "Branched"
 	if origMsg.Content != "" {
 		preview := origMsg.Content
@@ -101,15 +106,16 @@ func (s *SQLiteStorage) MoveSubtree(fromID string) (string, error) {
 		Title:     title,
 		CreatedAt: time.Now().Unix(),
 	}
-	if err := s.CreateThread(newThread); err != nil {
+	if _, err := tx.Exec(`INSERT INTO threads (id, title, created_at) VALUES (?, ?, ?)`,
+		newThread.ID, newThread.Title, newThread.CreatedAt); err != nil {
+		rollbackerr := tx.Rollback()
+		if rollbackerr != nil {
+			return "", fmt.Errorf("failed to create thread: %w; additionally failed to rollback transaction: %v", err, rollbackerr)
+		}
 		return "", fmt.Errorf("failed to create thread: %w", err)
 	}
 
 	// Step 7: Insert copied messages
-	tx, err := s.db.Begin()
-	if err != nil {
-		return "", err
-	}
 
 	stmt, err := tx.Prepare(`
         INSERT INTO messages (id, thread_id, parent_id, root_id, role, content, timestamp)
