@@ -206,6 +206,15 @@ func (m *MemoryStorage) MoveSubtree(fromMessageID string) (string, error) {
 }
 
 func (s *MemoryStorage) GetSettings() (*models.Settings, error) {
+	s.mu.RLock()
+	if s.settings != nil {
+		cfg := s.settings
+		s.mu.RUnlock()
+		return cfg, nil
+	}
+	s.mu.RUnlock()
+
+	s.mu.Lock()
 	if s.settings == nil {
 		s.settings = &models.Settings{
 			ID:           "default",
@@ -215,7 +224,9 @@ func (s *MemoryStorage) GetSettings() (*models.Settings, error) {
 			SimulateOnly: true,
 		}
 	}
-	return s.settings, nil
+	cfg := s.settings
+	s.mu.Unlock()
+	return cfg, nil
 }
 
 func (m *MemoryStorage) UpdateThread(t models.Thread) error {
@@ -232,6 +243,8 @@ func (m *MemoryStorage) UpdateThread(t models.Thread) error {
 }
 
 func (s *MemoryStorage) UpdateSettings(cfg models.Settings) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	s.settings = &cfg
 	return nil
 }
