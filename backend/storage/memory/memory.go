@@ -14,6 +14,7 @@ type MemoryStorage struct {
 	mu       sync.RWMutex
 	threads  map[string]models.Thread
 	messages map[string]models.Message
+	users    map[string]models.User
 	settings *models.Settings
 }
 
@@ -21,6 +22,7 @@ func New() storage.Storage {
 	return &MemoryStorage{
 		threads:  make(map[string]models.Thread),
 		messages: make(map[string]models.Message),
+		users:    make(map[string]models.User),
 	}
 }
 
@@ -246,5 +248,51 @@ func (s *MemoryStorage) UpdateSettings(cfg models.Settings) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.settings = &cfg
+	return nil
+}
+
+// --- User operations ---
+
+func (m *MemoryStorage) ListUsers() ([]models.User, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	out := make([]models.User, 0, len(m.users))
+	for _, u := range m.users {
+		out = append(out, u)
+	}
+	return out, nil
+}
+
+func (m *MemoryStorage) GetUser(id string) (*models.User, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	u, ok := m.users[id]
+	if !ok {
+		return nil, nil
+	}
+	return &u, nil
+}
+
+func (m *MemoryStorage) CreateUser(u models.User) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.users[u.ID] = u
+	return nil
+}
+
+func (m *MemoryStorage) UpdateUser(u models.User) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if _, ok := m.users[u.ID]; !ok {
+		return errors.New("user not found")
+	}
+	m.users[u.ID] = u
+	return nil
+}
+
+func (m *MemoryStorage) DeleteUser(id string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	delete(m.users, id)
 	return nil
 }

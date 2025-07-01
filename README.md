@@ -38,6 +38,18 @@ Backend: (requires GO)
 - Open a terminal
 - `cd backend && STORAGE_TYPE=memory go run cmd/threadwell/main.go`
 - STORAGE_PATH is only required for non-memory storage
+- AUTH_FILE can point to a JSON credentials file for basic auth
+
+### AUTH_FILE format
+
+The file should contain an array of objects:
+
+```json
+[
+  {"username": "alice", "password": "<bcrypt-hash>"}
+]
+```
+Use `bcrypt` to generate password hashes.
 
 Frontend: (requires Node)
 - Open a terminal
