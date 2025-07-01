@@ -1,9 +1,4 @@
-import type { ChatMessage } from "@/types";
-
-export interface ThreadedMessageNode {
-    message: ChatMessage;
-    children: ThreadedMessageNode[];
-}
+import type { ChatMessage, ThreadedMessageNode } from "@/types";
 
 /**
  * Transforms a flat array of ChatMessage into a threaded tree structure.
