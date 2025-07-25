@@ -82,7 +82,7 @@ const App: React.FC = () => {
 
 
             {/* --- Main Content UI --- */}
-            <main className="flex flex-col flex-1 overflow-hidden bg-background">
+            <main className="flex flex-col flex-1 overflow-visible bg-background">
                 {currentThreadId && currentThread ? (
                     <>
                         <header className="p-4 border-b flex-shrink-0">
