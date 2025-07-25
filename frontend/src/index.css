@@ -149,7 +149,7 @@
 }
 .chat-tree ul {
   display: flex;
-  padding-top: 2rem; /* Space for the lines */
+  padding-top: 3rem; /* Space for the lines */
 }
 
 .chat-tree li {
@@ -159,6 +159,7 @@
   align-items: center;
   padding-left: 1rem;
   padding-right: 1rem;
+  margin-bottom: 1rem;
 }
 
 /* Vertical line coming down from a node's children list (ul) */
@@ -169,7 +170,7 @@
   left: 50%;
   transform: translateX(-50%);
   width: 2px;
-  height: 2rem;
+  height: 3rem;
   background: var(--color-tree-line);
 }
 
@@ -192,7 +193,7 @@
   left: 50%;
   transform: translateX(-50%);
   width: 2px;
-  height: 2rem;
+  height: 3rem;
   background: var(--color-tree-line);
 }
 
